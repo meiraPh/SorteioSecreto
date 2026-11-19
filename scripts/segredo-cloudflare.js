@@ -17,11 +17,35 @@ function perguntarEscondido(texto) {
   });
 }
 
-(async () => {
-  let token = (await perguntarEscondido('Token da Cloudflare (não aparece ao digitar): ')).trim();
-  token = token.replace(/^authorization:\s*/i, '').replace(/^bearer\s+/i, '').replace(/^["']|["']$/g, '').trim();
+// O terminal pode embrulhar o que foi colado em marcadores de "bracketed paste"
+// (ESC[200~ ... ESC[201~) e mandar outros caracteres de controle; nada disso faz parte do token.
+function limpar(bruto) {
+  const s = String(bruto).replace(/\x1b\[20[01]~/g, '').replace(/[\x00-\x1f\x7f]/g, '').trim();
+  // Colou o comando de teste da Cloudflare (curl ... "Authorization: Bearer <token>")? Fica só o token.
+  const dentro = s.match(/Bearer\s+([A-Za-z0-9_-]{30,})/i);
+  if (dentro) return dentro[1];
+  return s
+    .replace(/^authorization:\s*/i, '')
+    .replace(/^bearer\s+/i, '')
+    .replace(/^["']|["']$/g, '')
+    .trim();
+}
+
+// Descreve o que há de errado sem mostrar o token.
+function problemas(t) {
+  const p = [`${t.length} caracteres`];
+  if (/\s/.test(t)) p.push('tem espaço no meio');
+  const outros = [...new Set(t.replace(/[A-Za-z0-9_\s-]/g, ''))];
+  if (outros.length) p.push(`tem os símbolos ${outros.map((c) => JSON.stringify(c)).join(' ')}`);
+  return p.join(', ');
+}
+
+module.exports = { limpar, problemas };
+
+if (require.main === module) (async () => {
+  const token = limpar(await perguntarEscondido('Token da Cloudflare (não aparece ao digitar): '));
   if (!/^[A-Za-z0-9_-]{30,}$/.test(token)) {
-    console.error(`Isso não parece um token (${token.length} caracteres, com espaços ou símbolos). Copie só o token. Nada foi gravado.`);
+    console.error(`Isso não parece um token (${problemas(token)}). Copie só o token. Nada foi gravado.`);
     process.exit(1);
   }
 
