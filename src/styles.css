@@ -468,7 +468,7 @@ input[readonly] { background: var(--papel-2); color: var(--tinta-2); font-size: 
   transform: rotate(-5deg);
 }
 .cena-papel .papel-nome { font-size: clamp(40px, 5.5vw, 54px); }
-.cena-papel.dedicado .papel-nome { font-size: clamp(30px, 4.2vw, 46px); }   /* "Maria Clara" é mais longo que "Júlia" */
+.cena-papel.dedicado .papel-nome { font-size: clamp(30px, 4.2vw, 46px); }   /* "Maria Clara" é mais longo que "XXXX" */
 .cena-pin {
   position: absolute;
   left: 8%;

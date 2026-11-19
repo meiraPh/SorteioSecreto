@@ -423,10 +423,10 @@
   // ------------------------------------------------------------------
   function viewInicio() {
     // Para a Maria Clara: tocar no papelzinho da ilustração troca o nome e o recado.
-    const cenaPapel = papel('Júlia', 'Segredo até 24 de dezembro', 'cena-papel');
+    const cenaPapel = papel('XXXX', 'Segredo até 24 de dezembro', 'cena-papel');
     cenaPapel.addEventListener('click', () => {
       const dedicado = cenaPapel.classList.toggle('dedicado');
-      cenaPapel.querySelector('.papel-nome').textContent = dedicado ? 'Maria Clara' : 'Júlia';
+      cenaPapel.querySelector('.papel-nome').textContent = dedicado ? 'Maria Clara' : 'XXXX';
       cenaPapel.querySelector('.papel-rodape').textContent = dedicado ? 'Eu tiraria você todo ano.' : 'Segredo até 24 de dezembro';
     });
     const salvos = paineisSalvos();

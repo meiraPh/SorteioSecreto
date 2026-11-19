@@ -195,3 +195,11 @@ Registro das decisões relevantes do projeto. Cada entrada tem data, decisão, a
 - **Alternativas:** "Feito para a família da Maria Clara."; "Para a Maria Clara e a nossa família."
 - **Motivo:** pedido do Pedro, com o texto escolhido entre três opções. É uma exceção deliberada à regra de não mexer no visual aprovado. Quando o nome está trocado, a fonte do papelzinho diminui um pouco para "Maria Clara" caber em telas de 320 px.
 - **Quem decidiu:** Pedro.
+
+## D-25 · Papelzinho da página inicial mostra "XXXX"
+
+- **Data:** 19/11/2026
+- **Decisão:** a ilustração da página inicial mostra "XXXX" (no mesmo itálico serifado) no lugar de "Júlia". O easter egg de D-24 continua: tocar troca por "Maria Clara" e o recado, e tocar de novo volta para "XXXX".
+- **Alternativas:** manter um nome de exemplo.
+- **Motivo:** pedido do Pedro depois de ver o staging. Revê D-24 só neste ponto.
+- **Quem decidiu:** Pedro.
