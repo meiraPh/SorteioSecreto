@@ -26,16 +26,21 @@ Em Project Settings > Data API, os esquemas expostos devem continuar só `public
 
 **2. Cloudflare.** Crie a conta, abra Workers & Pages e escolha o subdomínio `workers.dev`. Depois crie um API token com o modelo **Edit Cloudflare Workers** e anote também o **Account ID**.
 
-**3. GitHub: segredos.** Rode estes comandos na pasta do repositório; cada um pede o valor sem mostrar na tela:
+**3. GitHub: segredos.** Rode na pasta do repositório (`npm ci` antes, se ainda não rodou). O script pede a senha do banco sem mostrar na tela, monta a URL do Session pooler com a senha codificada (*percent-encoding*, necessário quando ela tem caracteres especiais), testa a conexão e só então grava o segredo:
+
+```bash
+node scripts/segredo-db.js staging <ref-staging>
+node scripts/segredo-db.js producao <ref-producao>
+```
+
+O `SUPABASE_DB_URL` de produção fica no ambiente `producao`, que só libera o segredo depois da sua aprovação. O host padrão do pooler é o de São Paulo (`aws-1-sa-east-1.pooler.supabase.com`); se o painel mostrar outro, passe-o como terceiro argumento.
+
+Os da Cloudflare pedem o valor sem mostrar na tela:
 
 ```bash
 gh secret set CLOUDFLARE_API_TOKEN
 gh secret set CLOUDFLARE_ACCOUNT_ID
-gh secret set SUPABASE_DB_URL --env staging
-gh secret set SUPABASE_DB_URL --env producao
 ```
-
-O `SUPABASE_DB_URL` de produção fica no ambiente `producao`, que só libera o segredo depois da sua aprovação.
 
 **4. GitHub: variáveis.** Não são segredo: a publishable key e as URLs vão parar no site de qualquer jeito.
 
