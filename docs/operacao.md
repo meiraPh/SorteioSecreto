@@ -46,7 +46,11 @@ Os participantes e as listas de desejos do evento vão junto. Não tem como desf
 
 ## Aplicar migrações
 
-A preencher na fase 5.
+O banco é descrito pelos arquivos de `supabase/migrations/`, aplicados em ordem pelo nome. Mudança no banco é sempre um arquivo novo (`npx supabase migration new <nome>`), nunca edição de um arquivo já aplicado.
+
+A migração inicial tem três linhas de limpeza (`drop function ... enviar_recado`, `drop function ... conversa`, `drop table ... recados`). Elas só fazem efeito num projeto que rodou a versão antiga do protótipo, que tinha recados anônimos. Num banco novo não fazem nada.
+
+Aplicar em staging e produção pelo pipeline: a preencher na fase 5.
 
 ## Reverter um deploy
 
@@ -61,7 +65,7 @@ A preencher na fase 6. O dump do banco contém quem tirou quem, então só é gu
 | Sintoma | O que fazer |
 |---|---|
 | Faixa "Demonstração" no site publicado | O `config.js` publicado está vazio ou é o arquivo errado. |
-| "O servidor respondeu com erro (… function … not found)" | O banco não tem as funções. Aplique o SQL de `supabase/` e confira se a Data API está ligada no projeto. |
+| "O servidor respondeu com erro (… function … not found)" | O banco não tem as funções. Aplique as migrações de `supabase/migrations/` e confira se a Data API está ligada no projeto. |
 | "Não consegui falar com o servidor" | O projeto pode estar pausado (veja acima) ou a URL do `config.js` está errada. |
 | "Invalid API key" | Confira a publishable key. Não pode ter espaço sobrando. |
 

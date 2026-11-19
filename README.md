@@ -24,6 +24,8 @@ src/                o site (é só isto que vai para a hospedagem)
   config.js         URL e chave pública do Supabase (vazio = modo demonstração)
   fonts/            Instrument Serif e Figtree (licença OFL)
 supabase/           banco (PostgreSQL no Supabase)
+  config.toml       configuração da stack local da Supabase CLI
+  migrations/       o SQL do banco, em migrações versionadas
 tests/              testes de SQL e de navegador (ver tests/README.md)
 docs/               decisões, backlog e operação
 ```
@@ -50,7 +52,9 @@ npm run serve:demo &
 npm run test:e2e:demo
 ```
 
-Os testes com banco (`test:sql` e `test:e2e:real`) precisam de um Postgres local. O passo a passo está em [tests/README.md](tests/README.md).
+Os testes com banco precisam de um Postgres local ou da stack local do Supabase (`npx supabase start`, que exige Docker). O passo a passo está em [tests/README.md](tests/README.md).
+
+O CI (`.github/workflows/ci.yml`) roda tudo em todo pull request: sobe a stack do Supabase, recria o banco só com as migrações e roda os testes de SQL, os testes da API, o E2E contra o PostgREST de verdade e o E2E em modo demonstração.
 
 Toda regra de negócio existe em dois lugares: no SQL (`supabase/`) e no modo demonstração (`src/api.js`). Mudou num, muda no outro e nos testes.
 
@@ -60,7 +64,7 @@ Ainda não automatizado: entra nas fases 4 e 5 do [backlog](docs/backlog.md). O 
 
 Até lá, o caminho manual é:
 
-1. No Supabase, rodar `supabase/schema.sql` inteiro no SQL Editor do projeto.
+1. No Supabase, rodar no SQL Editor do projeto os arquivos de `supabase/migrations/`, em ordem.
 2. Preencher `src/config.js` com a Project URL e a **publishable key** (`sb_publishable_...`). Nunca a chave secret / service_role.
 3. Publicar a pasta `src/` numa hospedagem de site estático.
 

@@ -9,11 +9,11 @@ Cada tarefa tem critério de aceite e responsável. Estados: `a fazer`, `fazendo
 | F0 | Reconhecimento e plano | Testes do zip rodando localmente; plano aprovado | Claude | feito (19/11/2026) |
 | F1.1 | Linha de base no git | Primeiro commit idêntico ao zip, byte a byte | Claude | feito |
 | F1.2 | Estrutura, README e docs | Site abre localmente em modo demonstração; testes verdes depois da reorganização | Claude | feito |
-| F1.3 | Repositório no GitHub e proteção da `main` | `main` só aceita mudança por PR | Claude | a fazer |
-| F2.1 | Supabase CLI e migração versionada | `supabase db reset` recria tudo; `sql-test` verde; SQL idêntico ao `schema.sql` | Claude | a fazer |
-| F2.2 | Prova de que nenhuma tabela aparece na API | Teste automático contra o PostgREST real | Claude | a fazer |
+| F1.3 | Repositório no GitHub e proteção da `main` | `main` só aceita mudança por PR | Claude | feito |
+| F2.1 | Supabase CLI e migração versionada | `supabase db reset` recria tudo; `sql-test` verde; SQL idêntico ao `schema.sql` | Claude | fazendo (prova no CI) |
+| F2.2 | Prova de que nenhuma tabela aparece na API | Teste automático contra o PostgREST real (`tests/api-test.js`) | Claude | fazendo (prova no CI) |
 | F2.3 | Criar os projetos de staging e produção no Supabase | Dois projetos em São Paulo; ref, URL e publishable key de cada um entregues | Pedro | a fazer |
-| F3 | CI em todo PR | SQL, E2E contra PostgREST real e E2E demo obrigatórios para o merge; capturas como artefato | Claude | a fazer |
+| F3 | CI em todo PR | SQL, E2E contra PostgREST real e E2E demo obrigatórios para o merge; capturas como artefato | Claude | fazendo |
 | F4.1 | Conta na Cloudflare e segredos | API token e account id gravados nos segredos do GitHub | Pedro | a fazer |
 | F4.2 | Deploy do site | Staging e produção no ar; `config.js` gerado no deploy; CSP sem `unsafe-inline`; smoke E2E contra staging | Claude | a fazer |
 | F4.3 | Trocar `style` inline por classe | `copiar` em `app.js` e `<noscript>` em `index.html` sem atributo `style`; E2E sem violação de CSP no console | Claude | a fazer |
@@ -31,4 +31,4 @@ Cada tarefa tem critério de aceite e responsável. Estados: `a fazer`, `fazendo
 | B-01 | Limite contra abuso em `criar_evento` | Criações em excesso são recusadas sem atrapalhar o uso normal; regra igual no SQL e no modo demonstração | a definir | a fazer |
 | B-02 | Domínio próprio | Site responde no domínio com HTTPS; CSP e links atualizados | Pedro decide | a fazer |
 | B-03 | Docker na máquina do Pedro | `supabase start` roda localmente | Pedro decide | a fazer |
-| B-04 | Atualizar o comentário do topo do SQL | O cabeçalho deixa de mandar colar o arquivo no SQL Editor | Claude | a fazer |
+| B-04 | Atualizar comentários que ainda citam `schema.sql` | O cabeçalho da migração e os comentários de `src/api.js`, `tests/server.js` e `tests/sql-test.js` citam `supabase/migrations/` | Claude | a fazer |

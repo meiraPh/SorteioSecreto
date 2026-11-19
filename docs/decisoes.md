@@ -98,3 +98,19 @@ Registro das decisões relevantes do projeto. Cada entrada tem data, decisão, a
 - **Alternativas:** o Claude fazer o merge sozinho quando o CI passar.
 - **Motivo:** o merge na `main` vai publicar em produção (D-02); essa decisão fica com o dono.
 - **Quem decidiu:** recomendação do Claude, a confirmar com o Pedro.
+
+## D-13 · Migração inicial idêntica ao `schema.sql`
+
+- **Data:** 19/11/2026
+- **Decisão:** o `supabase/schema.sql` virou `supabase/migrations/20261119000000_esquema_inicial.sql` por renomeação, sem mudar nenhum byte. O `schema.sql` deixou de existir; as migrações são a única fonte do banco.
+- **Alternativas:** manter o `schema.sql` ao lado das migrações; limpar a migração (tirar a remoção de recados e o comentário que manda colar no SQL Editor).
+- **Motivo:** arquivo idêntico prova que o comportamento não mudou. Duas fontes do mesmo SQL acabam divergindo. A limpeza de recados é inofensiva em banco novo e está explicada em [operacao.md](operacao.md); os comentários desatualizados ficaram no backlog (B-04).
+- **Quem decidiu:** Claude, dentro do pedido da fase 2.
+
+## D-14 · O emulador da API continua, para desenvolvimento
+
+- **Data:** 19/11/2026
+- **Decisão:** `tests/server.js` mantém o modo `real` (emulador da rota RPC) e ganha o modo `supabase`, que aponta o site para uma API de verdade. O CI usa só a API de verdade.
+- **Alternativas:** apagar o emulador.
+- **Motivo:** nesta máquina não há Docker (D-10), então o emulador é o único jeito de rodar o E2E com o SQL real fora do CI.
+- **Quem decidiu:** Claude, dentro do pedido da fase 3.
