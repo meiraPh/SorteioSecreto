@@ -10,8 +10,9 @@ Site de amigo oculto feito para a família. O organizador cadastra os nomes e o 
 - **Um link só para o grupo do WhatsApp**, com botão de envio pronto.
 - **Pegar o nome com PIN**: no primeiro acesso a pessoa cria o PIN e o nome fica preso a ela. Depois é só nome + PIN.
 - **Proteção do PIN**: guardado com bcrypt. Depois de 5 erros seguidos, o nome bloqueia por 10 minutos.
-- **Painel do organizador** num link secreto: quem já escolheu, quem falta, quem foi bloqueado, e o botão **Redefinir PIN**. O resultado do sorteio não muda e não aparece ali.
-- **Lista de desejos com links**: tamanhos e preferências, e presentes com nome, link da loja e observação. Só quem tirou a pessoa vê.
+- **Painel do organizador** num link secreto: quem já escolheu, quem falta, quem foi bloqueado, e o botão **Redefinir PIN**. O resultado do sorteio não muda e não aparece ali. O aparelho que abriu o painel lembra dele na página inicial, e há um botão para mandar o link para si mesmo.
+- **Lista de desejos com links**: camisa, calça e calçado em campos próprios, outras preferências, e presentes com nome, link da loja e observação. Só quem tirou a pessoa vê.
+- **Horário, local e agenda**: o sorteio pode ter horário e local da troca, e cada pessoa adiciona o evento ao Google Agenda ou à agenda do iPhone (o evento nunca leva quem ela tirou).
 
 ## Estrutura
 
