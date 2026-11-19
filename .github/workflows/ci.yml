@@ -14,6 +14,9 @@ on:
 permissions:
   contents: read
 
+env:
+  WRANGLER_SEND_METRICS: "false"
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -37,6 +40,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Testes do build (config.js, CSP, cache)
+        run: npm run test:site
+      - name: Valida o wrangler.jsonc e o build sem credencial
+        run: npm run build:demo && npx wrangler deploy --dry-run
       - run: npx playwright install --with-deps chromium
 
       # Só banco e API: o site não usa storage, realtime nem functions. O auth (gotrue)

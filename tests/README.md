@@ -3,10 +3,12 @@
 Ferramentas de desenvolvimento. Esta pasta nunca é publicada: o site é só o que está em `src/`.
 
 - `sql-test.js`: chama as funções do banco como o papel `anon` e confere as regras (permissões, validações, 80 sorteios com exclusões e corrente, PIN e bloqueio, painel, reset, lista de desejos).
-- `server.js`: serve `src/`. Modo `demo` serve o `config.js` vazio. Modo `real` imita a rota RPC do Supabase (`/rest/v1/rpc/<função>`) chamando o Postgres local como `anon`, e aponta o site para o próprio servidor. Modo `supabase` não imita nada: aponta o site para a API indicada em `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY`.
+- `server.js`: serve `src/` com os mesmos cabeçalhos do deploy, CSP inclusive. Modo `demo` serve o `config.js` vazio. Modo `real` imita a rota RPC do Supabase (`/rest/v1/rpc/<função>`) chamando o Postgres local como `anon`, e aponta o site para o próprio servidor. Modo `supabase` não imita nada: aponta o site para a API indicada em `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY`.
 - `api-test.js`: confere, contra o PostgREST de verdade, que nenhuma tabela fica exposta e que só as 7 funções públicas podem ser chamadas. Só faz sentido com a stack do Supabase (ou um projeto real), não com o emulador.
+- `site-test.js`: confere o build de `scripts/site.js` (só chave pública, CSP estrita, cache, nada de `tests/` publicado, nenhum `style` inline no site).
+- `vigia.js`: confere um ambiente publicado (página com CSP, `config.js` do ambiente, API respondendo). É o que o workflow Vigia roda.
 - `stack-env.js`: lê a URL e a chave pública da stack local do Supabase, para o CI.
-- `e2e.js`: fluxo completo no navegador (Playwright, 390×844): criar, 8 pessoas abrindo o papelzinho, lista com link, PIN errado e bloqueio, redefinir PIN no painel. Falha se houver erro no console. Salva capturas em `tests/shots/`.
+- `e2e.js`: fluxo completo no navegador (Playwright, 390×844): criar, 8 pessoas abrindo o papelzinho, lista com link, PIN errado e bloqueio, redefinir PIN no painel. Também copia um link pelo plano B (sem a API de área de transferência). Falha se houver erro no console ou violação de CSP, e confere o cabeçalho CSP quando roda por HTTP. Salva capturas em `tests/shots/`.
 
 ## Rodando
 
