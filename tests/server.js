@@ -1,6 +1,8 @@
 // Servidor de teste: entrega o site e imita a API RPC do Supabase (PostgREST)
 // chamando as funções reais do schema.sql no Postgres local, como "anon".
-// uso: node server.js <porta> <demo|real>
+// uso: node server.js <porta> <demo|real|supabase>
+// Modo supabase: não imita nada; o site fala com a API de verdade indicada em
+// SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY (ex.: a stack local do `supabase start`).
 // Banco: usa as variáveis PGHOST, PGPORT, PGUSER, PGDATABASE, PGPASSWORD.
 // Só para desenvolvimento local. NÃO publicar este arquivo.
 const http = require('http');
@@ -13,12 +15,16 @@ const MODO = process.argv[3] || 'real';
 const RAIZ = path.resolve(__dirname, '..', 'src');
 const pool = new Pool();
 const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.woff2': 'font/woff2' };
+if (MODO === 'supabase' && !(process.env.SUPABASE_URL && process.env.SUPABASE_PUBLISHABLE_KEY)) {
+  console.error('modo supabase: defina SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY');
+  process.exit(1);
+}
 const PERMITIDAS = new Set(['criar_evento', 'evento_publico', 'resgatar', 'entrar', 'salvar_lista', 'painel', 'resetar_pin']);
 
 http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   const m = url.pathname.match(/^\/rest\/v1\/rpc\/([a-z_]+)$/);
-  if (m && req.method === 'POST') {
+  if (m && req.method === 'POST' && MODO !== 'supabase') {
     if (!req.headers.apikey) { res.writeHead(401); return res.end('{"message":"No API key"}'); }
     const fn = m[1];
     let corpo = '';
@@ -48,6 +54,10 @@ http.createServer(async (req, res) => {
   if (p === '/config.js' && MODO === 'real') {
     res.writeHead(200, { 'Content-Type': TIPOS['.js'] });
     return res.end(`window.AMIGO_CONFIG = { SUPABASE_URL: 'http://localhost:${PORTA}', SUPABASE_KEY: 'sb_publishable_teste' };`);
+  }
+  if (p === '/config.js' && MODO === 'supabase') {
+    res.writeHead(200, { 'Content-Type': TIPOS['.js'] });
+    return res.end(`window.AMIGO_CONFIG = { SUPABASE_URL: ${JSON.stringify(process.env.SUPABASE_URL)}, SUPABASE_KEY: ${JSON.stringify(process.env.SUPABASE_PUBLISHABLE_KEY)} };`);
   }
   const arq = path.join(RAIZ, path.normalize(p));
   if (!arq.startsWith(RAIZ) || arq.includes(`${path.sep}tests${path.sep}`) || !fs.existsSync(arq)) { res.writeHead(404); return res.end('nao encontrado'); }

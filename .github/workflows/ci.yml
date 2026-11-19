@@ -1,0 +1,73 @@
+name: CI
+
+# Roda em todo pull request e em todo push na main.
+# Sobe a stack local do Supabase (Postgres + PostgREST de verdade), recria o banco
+# só com as migrações e roda: testes de SQL, testes da API, E2E contra a API real
+# e E2E em modo demonstração. As capturas do Playwright ficam como artefato.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  testes:
+    name: Testes
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Banco da stack local (porta e senha padrão do supabase/config.toml).
+      PGHOST: 127.0.0.1
+      PGPORT: 54322
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      # Só banco e API: o site não usa auth, storage, realtime nem functions.
+      - name: Sobe a stack local do Supabase
+        run: npx supabase start -x gotrue,realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      - name: Recria o banco do zero só com as migrações
+        run: npx supabase db reset
+      - name: Lê a URL e a chave pública da stack
+        run: node tests/stack-env.js >> "$GITHUB_ENV"
+
+      - name: Testes de SQL (papel anon)
+        run: npm run test:sql
+      - name: Testes da API (nenhuma tabela exposta)
+        run: npm run test:api
+
+      - name: E2E contra a API real (PostgREST)
+        run: |
+          npm run serve:supabase &
+          for i in $(seq 1 30); do curl -sf -o /dev/null http://localhost:8093/ && break; sleep 1; done
+          npm run test:e2e:supabase
+      - name: E2E em modo demonstração
+        run: |
+          npm run serve:demo &
+          for i in $(seq 1 30); do curl -sf -o /dev/null http://localhost:8091/ && break; sleep 1; done
+          npm run test:e2e:demo
+
+      - name: Guarda as capturas do Playwright
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas-playwright
+          path: tests/shots/
+          if-no-files-found: warn
+          retention-days: 14
