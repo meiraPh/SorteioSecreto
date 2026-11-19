@@ -129,6 +129,19 @@ async function call(c, fn, args) {
   assert.ok(quemTirouAna);
   console.log(`✓ lista com link salva e visível para quem tirou a Ana (${quemTirouAna})`);
 
+  // horário e local (opcionais): vão para a página do grupo e para quem entra com PIN
+  const hl = await call(c, 'criar_evento', { p_titulo: 'Com hora', p_participantes: ['A', 'B', 'C'], p_data: '2026-12-24', p_hora: '19:30', p_local: '  Casa da vó  ' });
+  assert.ok(hl.ok, JSON.stringify(hl));
+  const hp = await call(c, 'evento_publico', { p_codigo: hl.codigo });
+  assert.equal(hp.evento.hora, '19:30'); assert.equal(hp.evento.local, 'Casa da vó');
+  const hr = await call(c, 'resgatar', { p_participante: hp.participantes[0].id, p_pin: '2468' });
+  assert.equal(hr.evento.hora, '19:30'); assert.equal(hr.evento.local, 'Casa da vó');
+  assert.equal(pub.evento.hora, null, 'sorteio sem horário continua sem'); assert.equal(pub.evento.local, null);
+  for (const ruim of ['25:00', '7:30', '19h30', '19:60']) {
+    assert.equal((await call(c, 'criar_evento', { p_titulo: 'X', p_participantes: ['A', 'B', 'C'], p_hora: ruim })).erro, 'dados_invalidos', `hora ${ruim}`);
+  }
+  console.log('✓ horário e local opcionais e validados (página do grupo e quem entra com PIN)');
+
   // recados foram removidos
   await assert.rejects(c.query("select public.enviar_recado(gen_random_uuid(), '1', 'amigo', 'x')"), /does not exist/);
   console.log('✓ função de recados não existe mais');

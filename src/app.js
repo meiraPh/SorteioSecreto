@@ -68,6 +68,7 @@
     relogio: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
     presente: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/>',
     mensagem: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+    local: '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
   };
 
   function icone(nome, cls) {
@@ -155,6 +156,67 @@
   function hora(iso) {
     return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   }
+  // "19:30" -> "19h30"; "19:00" -> "19h"
+  function horaBR(hhmm) {
+    const [hh, mm] = String(hhmm).split(':');
+    return `${Number(hh)}h${mm === '00' ? '' : mm}`;
+  }
+  function quandoTexto(ev) {
+    return capital(dataLonga(ev.data)) + (ev.hora ? `, às ${horaBR(ev.hora)}` : '');
+  }
+
+  // ------------------------------------------------------------------
+  //  Agenda: o evento da troca (nunca leva quem a pessoa tirou)
+  // ------------------------------------------------------------------
+  const DURACAO_H = 3;   // a troca dura umas 3 horas na agenda
+  const dois = (n) => String(n).padStart(2, '0');
+  // Data "por fora do fuso": usa os campos UTC só como relógio, para somar horas sem
+  // depender do fuso do aparelho.
+  function relogio(data, hora, somaH) {
+    const [y, m, d] = data.split('-').map(Number);
+    const [hh, mm] = (hora || '00:00').split(':').map(Number);
+    return new Date(Date.UTC(y, m - 1, d, hh + (somaH || 0), mm));
+  }
+  const compacta = (t) => `${t.getUTCFullYear()}${dois(t.getUTCMonth() + 1)}${dois(t.getUTCDate())}`;
+  const compactaHora = (t) => `${compacta(t)}T${dois(t.getUTCHours())}${dois(t.getUTCMinutes())}00`;
+  function detalhesAgenda(ev) {
+    return [
+      ev.organizador ? `Amigo oculto organizado por ${ev.organizador}.` : 'Amigo oculto.',
+      ev.valor ? `Valor do presente: ${ev.valor}.` : null,
+      ev.mensagem || null,
+      `Rever o papelzinho: ${linkGrupo(ev.codigo)}`,
+    ].filter(Boolean).join('\n');
+  }
+  function linkGoogleAgenda(ev) {
+    const datas = ev.hora
+      ? `${compactaHora(relogio(ev.data, ev.hora))}/${compactaHora(relogio(ev.data, ev.hora, DURACAO_H))}`
+      : `${compacta(relogio(ev.data))}/${compacta(relogio(ev.data, null, 24))}`;
+    const q = new URLSearchParams({ action: 'TEMPLATE', text: ev.titulo, dates: datas, details: detalhesAgenda(ev) });
+    if (ev.local) q.set('location', ev.local);
+    if (ev.hora) q.set('ctz', 'America/Sao_Paulo');
+    return `https://calendar.google.com/calendar/render?${q}`;
+  }
+  // Arquivo .ics (iPhone e outras agendas). Horário de Brasília, UTC-3 o ano todo.
+  function arquivoAgenda(ev) {
+    const esc = (s) => String(s).replace(/\\/g, '\\\\').replace(/[;,]/g, (c) => '\\' + c).replace(/\r?\n/g, '\\n');
+    const dobra = (l) => l.length <= 72 ? l : l.match(/.{1,72}/g).join('\r\n ');
+    const agora = new Date();
+    const linhas = [
+      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Amigo Oculto//PT-BR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      `UID:${ev.codigo}-${ev.data}@amigo-oculto`,
+      `DTSTAMP:${compactaHora(new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate(), agora.getUTCHours(), agora.getUTCMinutes())))}Z`,
+      ...(ev.hora
+        ? [`DTSTART:${compactaHora(relogio(ev.data, ev.hora, 3))}Z`, `DTEND:${compactaHora(relogio(ev.data, ev.hora, 3 + DURACAO_H))}Z`]
+        : [`DTSTART;VALUE=DATE:${compacta(relogio(ev.data))}`, `DTEND;VALUE=DATE:${compacta(relogio(ev.data, null, 24))}`]),
+      `SUMMARY:${esc(ev.titulo)}`,
+      ev.local ? `LOCATION:${esc(ev.local)}` : null,
+      `DESCRIPTION:${esc(detalhesAgenda(ev))}`,
+      'END:VEVENT', 'END:VCALENDAR',
+    ].filter(Boolean).map(dobra);
+    return linhas.join('\r\n') + '\r\n';
+  }
+
   function diaHora(iso) {
     const d = new Date(iso);
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ', ' + hora(iso);
@@ -171,6 +233,48 @@
     if (!/^[a-z][a-z0-9+.-]*:/i.test(t)) t = 'https://' + t.replace(/^\/+/, '');
     return t;
   }
+  // Tamanhos e preferências ficam num texto só (a coluna do banco é a mesma de antes):
+  // uma linha por campo, "Rótulo: valor". Texto antigo, sem rótulo, vira "Outras".
+  const CAMISAS = ['PP', 'P', 'M', 'G', 'GG', 'XG'];
+  const CAMPOS_TAM = [['camisa', 'Camisa'], ['calca', 'Calça'], ['calcado', 'Calçado'], ['outras', 'Outras']];
+  function lerTamanhos(texto) {
+    const t = { camisa: '', calca: '', calcado: '', outras: '' };
+    const soltas = [];
+    for (const linha of String(texto || '').split('\n')) {
+      const m = linha.match(/^(Camisa|Calça|Calçado|Outras):\s*(.*)$/);
+      if (m) t[CAMPOS_TAM.find(([, r]) => r === m[1])[0]] = m[2].trim();
+      else if (linha.trim()) soltas.push(linha.trim());
+    }
+    if (t.camisa && !CAMISAS.includes(t.camisa)) { soltas.unshift(`Camisa ${t.camisa}`); t.camisa = ''; }
+    if (soltas.length) t.outras = [...soltas, t.outras].filter(Boolean).join(' ');
+    return t;
+  }
+  function escreverTamanhos(t) {
+    return CAMPOS_TAM.filter(([k]) => t[k]).map(([k, r]) => `${r}: ${t[k]}`).join('\n');
+  }
+
+  // Painéis criados ou abertos neste aparelho, para voltar pela página inicial.
+  // Fica só neste navegador; se o armazenamento estiver bloqueado, o site funciona igual.
+  // No modo demonstração não guarda: os dados somem ao recarregar.
+  const CHAVE_PAINEIS = 'amigo-oculto:paineis';
+  function paineisSalvos() {
+    if (api.modo === 'demo') return [];
+    try {
+      const v = JSON.parse(localStorage.getItem(CHAVE_PAINEIS) || '[]');
+      return Array.isArray(v) ? v.filter((p) => p && /^[0-9a-f]{10}$/.test(p.codigo) && /^[0-9a-f]{36}$/.test(p.token)) : [];
+    } catch (e) { return []; }
+  }
+  function lembrarPainel(codigo, token, titulo) {
+    if (api.modo === 'demo') return;
+    try {
+      const outros = paineisSalvos().filter((p) => p.codigo !== codigo);
+      localStorage.setItem(CHAVE_PAINEIS, JSON.stringify([{ codigo, token, titulo: String(titulo || '').slice(0, 80) }, ...outros].slice(0, 5)));
+    } catch (e) { /* sem armazenamento: segue sem lembrar */ }
+  }
+  function esquecerPainel(codigo) {
+    try { localStorage.setItem(CHAVE_PAINEIS, JSON.stringify(paineisSalvos().filter((p) => p.codigo !== codigo))); } catch (e) { /* idem */ }
+  }
+
   function baseUrl() { return location.href.split('#')[0]; }
   function linkGrupo(codigo) { return `${baseUrl()}#/e/${codigo}`; }
   function linkAdmin(codigo, token) { return `${baseUrl()}#/admin/${codigo}/${token}`; }
@@ -223,6 +327,27 @@
     else toast('Não consegui copiar. Selecione o link e copie à mão.', true);
   }
 
+  // Manda o link do painel para a própria pessoa. No celular usa o "Compartilhar" do
+  // sistema (a pessoa escolhe a conversa com ela mesma no WhatsApp), sem o link passar
+  // pela URL de terceiros. Sem isso, abre o WhatsApp com o texto pronto.
+  async function mandarPainelParaMim(titulo, link) {
+    const texto = `Link do painel do sorteio "${titulo}". É só seu: não mande no grupo.\n${link}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Painel do amigo oculto', text: texto }); return; } catch (e) {
+        if (e && e.name === 'AbortError') return;   // a pessoa fechou o compartilhar
+      }
+    }
+    window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank', 'noopener');
+  }
+
+  // Para a Maria Clara: três toques seguidos no selo da marca mostram um recado.
+  let toquesSelo = [];
+  function toqueNoSelo() {
+    const agora = Date.now();
+    toquesSelo = toquesSelo.filter((t) => agora - t < 1500).concat(agora);
+    if (toquesSelo.length >= 3) { toquesSelo = []; toast('Este site existe por sua causa, Maria Clara.'); }
+  }
+
   // ------------------------------------------------------------------
   //  Estrutura da página
   // ------------------------------------------------------------------
@@ -231,7 +356,7 @@
       h('header', { class: 'topo' },
         h('div', { class: 'topo-in' + (largo ? ' largo' : '') },
           h('a', { href: '#/', class: 'marca', 'aria-label': 'Amigo Oculto, página inicial' },
-            h('span', { class: 'marca-selo' }, glifo()),
+            h('span', { class: 'marca-selo', onclick: toqueNoSelo }, glifo()),
             h('span', { class: 'marca-txt' }, 'Amigo ', h('em', null, 'Oculto'))),
           api.modo === 'demo'
             ? h('span', { class: 'pill pill-aviso', title: 'Os dados ficam só nesta aba. Configure o Supabase em config.js para usar de verdade.' }, 'Demonstração')
@@ -276,9 +401,10 @@
         h('div', { class: 'convite-titulo' },
           h('p', { class: 'sobre' }, qtd ? `Amigo oculto · ${qtd} pessoas` : 'Amigo oculto'),
           h(nivel || 'h1', { class: 'convite-h' }, ev.titulo),
-          d ? h('p', { class: 'convite-quando' }, capital(dataLonga(ev.data)),
+          d ? h('p', { class: 'convite-quando' }, quandoTexto(ev),
             h('span', { class: 'pill pill-latao' }, contagem(ev.data))) : null)),
-      (ev.valor || ev.organizador) ? h('dl', { class: 'convite-meta' },
+      (ev.valor || ev.organizador || ev.local) ? h('dl', { class: 'convite-meta' },
+        ev.local ? h('div', null, h('dt', null, icone('local'), 'Local'), h('dd', null, ev.local)) : null,
         ev.valor ? h('div', null, h('dt', null, icone('etiqueta'), 'Valor'), h('dd', null, ev.valor)) : null,
         ev.organizador ? h('div', null, h('dt', null, icone('usuario'), 'Organização'), h('dd', null, ev.organizador)) : null) : null,
       ev.mensagem ? h('blockquote', { class: 'convite-msg' }, ev.mensagem) : null);
@@ -296,19 +422,32 @@
   //  Início
   // ------------------------------------------------------------------
   function viewInicio() {
+    // Para a Maria Clara: tocar no papelzinho da ilustração troca o nome e o recado.
+    const cenaPapel = papel('Júlia', 'Segredo até 24 de dezembro', 'cena-papel');
+    cenaPapel.addEventListener('click', () => {
+      const dedicado = cenaPapel.classList.toggle('dedicado');
+      cenaPapel.querySelector('.papel-nome').textContent = dedicado ? 'Maria Clara' : 'Júlia';
+      cenaPapel.querySelector('.papel-rodape').textContent = dedicado ? 'Eu tiraria você todo ano.' : 'Segredo até 24 de dezembro';
+    });
+    const salvos = paineisSalvos();
+
     montar(true, [
       h('section', { class: 'hero' },
         h('div', { class: 'hero-texto' },
           h('p', { class: 'sobre' }, 'Sorteio de amigo oculto'),
-          h('h1', { class: 'hero-h' }, 'O sorteio da família, ', h('em', null, 'sem ninguém esquecer quem tirou.')),
+          h('h1', { class: 'hero-h' }, 'Com carinho, ', h('em', null, 'para a Maria Clara.')),
           h('p', { class: 'hero-sub' }, 'Cadastre os nomes, mande um link no grupo e pronto. Cada pessoa abre o próprio papelzinho com um PIN de 4 números, quantas vezes precisar até o dia da troca.'),
           h('div', { class: 'hero-acoes' },
             h('a', { class: 'btn btn-acao btn-g', href: '#/criar' }, 'Criar sorteio', icone('seta')),
-            h('span', { class: 'hero-nota' }, 'Sem cadastro e sem aplicativo.'))),
+            h('span', { class: 'hero-nota' }, 'Sem cadastro e sem aplicativo.')),
+          salvos.length ? h('div', { class: 'meus-paineis' },
+            h('p', { class: 'hero-nota' }, 'Sorteios que você organiza neste aparelho:'),
+            salvos.map((p) => h('a', { class: 'btn btn-fantasma btn-p', href: `#/admin/${p.codigo}/${p.token}` },
+              icone('chave'), `Painel de ${p.titulo}`))) : null),
         h('div', { class: 'hero-visual', 'aria-hidden': 'true' },
           h('div', { class: 'cena' },
             h('div', { class: 'cena-capa' }, h('span', { class: 'selo' }, glifo('glifo grande'))),
-            papel('Júlia', 'Segredo até 24 de dezembro', 'cena-papel'),
+            cenaPapel,
             h('div', { class: 'cena-pin' }, icone('cadeado'), h('span', null, 'PIN'), h('span', { class: 'cena-pontos' }, '• • • •'))))),
 
       h('section', { class: 'passos' },
@@ -343,6 +482,8 @@
     const inOrg = h('input', { id: 'f-org', maxlength: 60, placeholder: 'Seu nome', autocomplete: 'given-name' });
     const inData = h('input', { id: 'f-data', type: 'date', value: proximoNatal() });
     const inValor = h('input', { id: 'f-valor', maxlength: 40, placeholder: 'R$ 100' });
+    const inHora = h('input', { id: 'f-hora', type: 'time' });
+    const inLocal = h('input', { id: 'f-local', maxlength: 120, placeholder: 'Casa da vó' });
     const inMsg = h('textarea', { id: 'f-msg', maxlength: 1000, rows: 3,
       placeholder: 'Troca na ceia do dia 24, na casa da vó. Presente com nota para trocar.' });
 
@@ -463,6 +604,7 @@
       const r = await api.criarEvento({
         titulo: inTitulo.value.trim(), organizador: inOrg.value.trim(), data: inData.value || null,
         valor: inValor.value.trim(), mensagem: inMsg.value.trim(), corrente: chkCorrente.checked,
+        hora: inHora.value || null, local: inLocal.value.trim(),
         participantes: st.nomes, exclusoes,
       });
       if (!r || !r.ok) {
@@ -493,6 +635,9 @@
           h('div', { class: 'grade-2' },
             campo('f-data', 'Data da troca', inData),
             campo('f-valor', 'Valor do presente', inValor)),
+          h('div', { class: 'grade-2' },
+            campo('f-hora', ['Horário ', h('span', { class: 'opcional' }, 'opcional')], inHora),
+            campo('f-local', ['Local ', h('span', { class: 'opcional' }, 'opcional')], inLocal)),
           campo('f-org', 'Quem organiza', inOrg, 'Aparece para a família na hora de pedir ajuda com o PIN.'),
           campo('f-msg', 'Recado para todos', inMsg)),
 
@@ -533,7 +678,11 @@
   async function viewAdmin(codigo, token) {
     carregando();
     const r = await api.painel(codigo, token);
-    if (!r || !r.ok) return telaErro(msgErro(r));
+    if (!r || !r.ok) {
+      if (r && r.erro === 'acesso_negado') esquecerPainel(codigo);
+      return telaErro(msgErro(r));
+    }
+    lembrarPainel(codigo, token, r.evento.titulo);
     const novo = acabouDeCriar === codigo;
     acabouDeCriar = null;
     desenharAdmin(codigo, token, r, novo);
@@ -612,8 +761,11 @@
 
       h('div', { class: 'aviso aviso-latao' }, icone('chave'),
         h('div', null,
-          h('p', null, h('strong', null, 'Guarde o endereço deste painel. '), 'É por ele que você acompanha a família e libera quem esquecer o PIN. Não mande no grupo.'),
-          h('button', { type: 'button', class: 'btn btn-fantasma btn-p', onclick: () => copiar(linkAdmin(codigo, token), 'Link do painel copiado') }, icone('copiar'), 'Copiar link do painel'))),
+          h('p', null, h('strong', null, 'Guarde o endereço deste painel. '), 'É por ele que você acompanha a família e libera quem esquecer o PIN. Não mande no grupo.',
+            api.modo === 'demo' ? null : ' Este aparelho também guarda o painel na página inicial.'),
+          h('div', { class: 'aviso-acoes' },
+            h('button', { type: 'button', class: 'btn btn-fantasma btn-p', onclick: () => copiar(linkAdmin(codigo, token), 'Link do painel copiado') }, icone('copiar'), 'Copiar link do painel'),
+            h('button', { type: 'button', class: 'btn btn-fantasma btn-p', id: 'btn-painel-mim', onclick: () => mandarPainelParaMim(ev.titulo, linkAdmin(codigo, token)) }, icone('enviar'), 'Mandar para mim')))),
 
       h('section', { class: 'folha' },
         h('h2', null, 'Participantes'),
@@ -841,13 +993,38 @@
       out.push(h('section', { class: 'folha' },
         h('p', { class: 'sobre' }, 'Lista de desejos'),
         h('h2', null, `O que ${d.amigo.nome} gostaria de ganhar`),
-        d.amigo.tamanhos ? h('div', { class: 'tamanhos' }, h('span', { class: 'tamanhos-r' }, 'Tamanhos e preferências'), h('p', null, d.amigo.tamanhos)) : null,
+        d.amigo.tamanhos ? blocoTamanhos(d.amigo.tamanhos) : null,
         desejos.length
           ? h('ol', { class: 'desejos' }, desejos.map(itemDesejo))
           : h('div', { class: 'vazio' }, icone('lista'),
             h('p', null, `${d.amigo.nome} ainda não montou a lista. Dê uma olhada de novo mais perto da troca.`))));
     }
+    if (d.evento.data) out.push(blocoAgenda(d.evento));
     return out;
+  }
+
+  // "Adicionar à agenda": um toque abre o evento preenchido; salvar é com o app de agenda.
+  function blocoAgenda(ev) {
+    return h('section', { class: 'folha agenda' },
+      h('p', { class: 'sobre' }, 'Dia da troca'),
+      h('h2', null, quandoTexto(ev)),
+      ev.local ? h('p', { class: 'dica' }, ev.local) : null,
+      h('div', { class: 'acoes-2' },
+        h('a', { class: 'btn btn-secundario', id: 'btn-google-agenda', href: linkGoogleAgenda(ev), target: '_blank', rel: 'noopener noreferrer' },
+          icone('calendario'), 'Google Agenda'),
+        h('a', { class: 'btn btn-secundario', id: 'btn-ics', download: 'amigo-oculto.ics',
+          href: 'data:text/calendar;charset=utf-8,' + encodeURIComponent(arquivoAgenda(ev)) },
+          icone('calendario'), 'Agenda do iPhone')));
+  }
+
+  function blocoTamanhos(texto) {
+    const t = lerTamanhos(texto);
+    const medidas = [['Camisa', t.camisa], ['Calça', t.calca], ['Calçado', t.calcado]]
+      .filter(([, v]) => v).map(([r, v]) => `${r} ${v}`).join(' · ');
+    return h('div', { class: 'tamanhos' },
+      h('span', { class: 'tamanhos-r' }, 'Tamanhos e preferências'),
+      medidas ? h('p', null, medidas) : null,
+      t.outras ? h('p', null, t.outras) : null);
   }
 
   function itemDesejo(x, i) {
@@ -864,9 +1041,14 @@
   function abaMinhaLista(d) {
     const itens = (d.eu.desejos || []).map((x) => ({ descricao: x.descricao, link: x.link || '', obs: x.obs || '' }));
     if (!itens.length) itens.push({ descricao: '', link: '', obs: '' });
-    const tam = h('textarea', { id: 'tamanhos', rows: 2, maxlength: 300,
-      placeholder: 'Camisa M, calça 40, calçado 38. Não gosto de perfume doce.' });
-    tam.value = d.eu.tamanhos || '';
+    const tamAtual = lerTamanhos(d.eu.tamanhos);
+    const selCamisa = h('select', { id: 't-camisa' },
+      h('option', { value: '' }, '—'), CAMISAS.map((c) => h('option', { value: c }, c)));
+    selCamisa.value = tamAtual.camisa;
+    const numero = (id, valor, exemplo) => h('input', { id, value: valor, inputmode: 'numeric', maxlength: 3, placeholder: exemplo, autocomplete: 'off' });
+    const inCalca = numero('t-calca', tamAtual.calca, '40');
+    const inCalcado = numero('t-calcado', tamAtual.calcado, '38');
+    const inOutras = h('input', { id: 't-outras', value: tamAtual.outras, maxlength: 200, placeholder: 'Não gosto de perfume doce' });
     const listaEl = h('div', { class: 'itens' });
     const erro = h('p', { class: 'msg-erro', role: 'alert' });
     const btnSalvar = h('button', { type: 'submit', class: 'btn btn-primario btn-g btn-bloco', id: 'btn-salvar' }, 'Salvar lista');
@@ -913,8 +1095,12 @@
         limpos.push({ descricao, link: link || null, obs: obs || null });
       }
       if (limpos.length > 20) { erro.textContent = MSG.lista_invalida; return; }
+      const calca = inCalca.value.trim(), calcado = inCalcado.value.trim();
+      if (calca && !/^\d{1,3}$/.test(calca)) { erro.textContent = 'Na calça, coloque só o número, por exemplo 40.'; inCalca.focus(); return; }
+      if (calcado && !/^\d{1,3}$/.test(calcado)) { erro.textContent = 'No calçado, coloque só o número, por exemplo 38.'; inCalcado.focus(); return; }
+      const tamanhos = escreverTamanhos({ camisa: selCamisa.value, calca, calcado, outras: inOutras.value.trim() });
       btnSalvar.disabled = true; btnSalvar.replaceChildren(h('span', { class: 'spinner spinner-claro' }), 'Salvando');
-      const r = await api.salvarLista(sessao.pid, sessao.pin, tam.value, limpos);
+      const r = await api.salvarLista(sessao.pid, sessao.pin, tamanhos, limpos);
       btnSalvar.disabled = false; btnSalvar.replaceChildren('Salvar lista');
       if (!r || !r.ok) { erro.textContent = msgErro(r); return; }
       sessao.dados = r;
@@ -928,7 +1114,13 @@
       h('p', { class: 'sobre' }, 'Lista de desejos'),
       h('h2', null, 'O que você gostaria de ganhar'),
       h('p', { class: 'dica dica-topo' }, 'Só quem te tirou consegue ver. Com o link da loja, ninguém erra o presente.'),
-      h('div', { class: 'campo' }, h('label', { for: 'tamanhos' }, 'Tamanhos e preferências'), tam),
+      h('div', { class: 'tamanhos-campos', role: 'group', 'aria-labelledby': 'tamanhos-r' },
+        h('p', { class: 'tamanhos-titulo', id: 'tamanhos-r' }, 'Tamanhos e preferências'),
+        h('div', { class: 'grade-3' },
+          h('div', { class: 'campo' }, h('label', { for: 't-camisa' }, 'Camisa'), selCamisa),
+          h('div', { class: 'campo' }, h('label', { for: 't-calca' }, 'Calça'), inCalca),
+          h('div', { class: 'campo' }, h('label', { for: 't-calcado' }, 'Calçado'), inCalcado)),
+        h('div', { class: 'campo' }, h('label', { for: 't-outras' }, 'Outras preferências ', h('span', { class: 'opcional' }, 'opcional')), inOutras)),
       listaEl, btnAdd, erro, btnSalvar)];
   }
 
