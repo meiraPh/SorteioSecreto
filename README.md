@@ -21,16 +21,19 @@ src/                o site (é só isto que vai para a hospedagem)
   styles.css        visual
   app.js            telas e rotas por hash
   api.js            camada de dados: Supabase ou modo demonstração
-  config.js         URL e chave pública do Supabase (vazio = modo demonstração)
+  config.js         URL e chave pública do Supabase (vazio = modo demonstração; o deploy gera o seu)
   fonts/            Instrument Serif e Figtree (licença OFL)
 supabase/           banco (PostgreSQL no Supabase)
   config.toml       configuração da stack local da Supabase CLI
   migrations/       o SQL do banco, em migrações versionadas
-tests/              testes de SQL e de navegador (ver tests/README.md)
-docs/               decisões, backlog e operação
+scripts/site.js     monta o site para publicar: config.js e cabeçalhos (CSP, cache) do ambiente
+tests/              testes de SQL, da API, do build e de navegador (ver tests/README.md)
+.github/workflows/  CI, deploy e vigia
+wrangler.jsonc      Worker da Cloudflare que serve o site
+docs/               decisões, backlog, operação e design
 ```
 
-O site não tem framework nem build: são arquivos estáticos.
+O site não tem framework nem bundler: são arquivos estáticos. O "build" só copia `src/` e gera o que muda por ambiente.
 
 ## Rodar local
 
@@ -60,13 +63,14 @@ Toda regra de negócio existe em dois lugares: no SQL (`supabase/`) e no modo de
 
 ## Deploy
 
-Ainda não automatizado: entra nas fases 4 e 5 do [backlog](docs/backlog.md). O destino decidido é Cloudflare para o site e dois projetos Supabase (staging e produção) para o banco; veja [docs/decisoes.md](docs/decisoes.md).
+Automático, pelo GitHub Actions (`.github/workflows/deploy.yml`):
 
-Até lá, o caminho manual é:
+- **Pull request:** preview do site apontando para o Supabase de staging, com E2E.
+- **Merge na `main`:** migrações e site em staging, com testes; depois produção, com aprovação manual.
 
-1. No Supabase, rodar no SQL Editor do projeto os arquivos de `supabase/migrations/`, em ordem.
-2. Preencher `src/config.js` com a Project URL e a **publishable key** (`sb_publishable_...`). Nunca a chave secret / service_role.
-3. Publicar a pasta `src/` numa hospedagem de site estático.
+O site vai para a Cloudflare (Workers, só arquivos estáticos). `npm run build` copia `src/` para `dist/` e gera o `config.js` e os cabeçalhos (CSP estrita, cache) do ambiente. URLs e chaves ficam em variáveis e segredos do GitHub, nunca no repositório. O build recusa chave secret ou service_role.
+
+A configuração inicial (contas, segredos, variáveis), como reverter um deploy e o workflow Vigia (disponibilidade e keep-alive) estão em [docs/operacao.md](docs/operacao.md).
 
 ## Segurança
 

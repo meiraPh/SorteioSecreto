@@ -1,0 +1,156 @@
+name: Deploy
+
+# Só roda quando a variável do repositório DEPLOY_ATIVO for "true", ou seja, depois que as
+# contas, variáveis e segredos estiverem prontos (passo a passo em docs/operacao.md).
+#
+# - Pull request: publica um preview do site no Worker de staging (endereço pr-<número>-...),
+#   apontando para o Supabase de staging, e roda o E2E nele. Não mexe no banco.
+# - Merge na main: aplica as migrações no Supabase de staging, publica o site de staging e
+#   roda os testes nele. Depois, produção: espera a aprovação manual do ambiente "producao",
+#   aplica as migrações, publica o site e confere a API (só leitura).
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WRANGLER_SEND_METRICS: "false"
+
+jobs:
+  preview:
+    name: Preview do PR
+    if: >-
+      github.event_name == 'pull_request' && vars.DEPLOY_ATIVO == 'true' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: preview-${{ github.event.number }}
+      cancel-in-progress: true
+    env:
+      SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ vars.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Publica a versão com alias pr-${{ github.event.number }}
+        run: npx wrangler versions upload --name amigo-oculto-staging --preview-alias "pr-${{ github.event.number }}" --message "PR ${{ github.event.number }}"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Endereço do preview
+        id: preview
+        env:
+          STAGING_SITE_URL: ${{ vars.STAGING_SITE_URL }}
+        run: |
+          host="${STAGING_SITE_URL#https://}"; host="${host%%/*}"
+          url="https://pr-${{ github.event.number }}-${host}"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Preview deste PR: $url" >> "$GITHUB_STEP_SUMMARY"
+      - run: npx playwright install --with-deps chromium
+      - name: E2E no preview
+        run: node tests/e2e.js "${{ steps.preview.outputs.url }}" preview
+      - name: Guarda as capturas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas-preview
+          path: tests/shots/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  staging:
+    name: Staging
+    if: github.event_name != 'pull_request' && vars.DEPLOY_ATIVO == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_SITE_URL }}
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
+    env:
+      SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ vars.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # URL do "Session pooler" (IPv4): os runners do GitHub não têm IPv6 para a conexão direta.
+      - name: Migrações no Supabase de staging
+        run: npx supabase db push --remote="$SUPABASE_DB_URL" --yes
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      - run: npm run build
+      - name: Publica o site de staging
+        run: npx wrangler deploy --name amigo-oculto-staging
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Testes da API no staging (nenhuma tabela exposta)
+        run: npm run test:api
+      - run: npx playwright install --with-deps chromium
+      - name: E2E no staging
+        run: node tests/e2e.js "${{ vars.STAGING_SITE_URL }}" staging
+      - name: Guarda as capturas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas-staging
+          path: tests/shots/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  producao:
+    name: Produção
+    needs: staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # O ambiente "producao" exige aprovação manual: o job espera até alguém aprovar.
+    environment:
+      name: producao
+      url: ${{ vars.PROD_SITE_URL }}
+    concurrency:
+      group: deploy-producao
+      cancel-in-progress: false
+    env:
+      SUPABASE_URL: ${{ vars.PROD_SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ vars.PROD_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Migrações no Supabase de produção
+        run: npx supabase db push --remote="$SUPABASE_DB_URL" --yes
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      - run: npm run build
+      - name: Publica o site de produção
+        run: npx wrangler deploy --name amigo-oculto
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      # Em produção nada de E2E: ele criaria sorteios de mentira. Só checagens de leitura.
+      - name: Testes da API em produção (só leitura)
+        run: npm run test:api
+      - name: Site e API respondem
+        run: node tests/vigia.js
+        env:
+          SITE_URL: ${{ vars.PROD_SITE_URL }}
