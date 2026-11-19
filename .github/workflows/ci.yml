@@ -39,9 +39,10 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
 
-      # Só banco e API: o site não usa auth, storage, realtime nem functions.
+      # Só banco e API: o site não usa storage, realtime nem functions. O auth (gotrue)
+      # também não é usado, mas fica ligado: sem ele a CLI não informa as chaves da API.
       - name: Sobe a stack local do Supabase
-        run: npx supabase start -x gotrue,realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+        run: npx supabase start -x realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
       - name: Recria o banco do zero só com as migrações
         run: npx supabase db reset
       - name: Lê a URL e a chave pública da stack
