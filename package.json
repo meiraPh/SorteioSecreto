@@ -4,13 +4,17 @@
   "description": "Amigo Oculto: site estático (src/), banco no Supabase (supabase/) e testes (tests/).",
   "scripts": {
     "test:sql": "node tests/sql-test.js",
+    "test:api": "node tests/api-test.js",
     "serve:demo": "node tests/server.js 8091 demo",
     "serve:real": "node tests/server.js 8092 real",
+    "serve:supabase": "node tests/server.js 8093 supabase",
     "test:e2e:demo": "node tests/e2e.js http://localhost:8091 demo",
-    "test:e2e:real": "node tests/e2e.js http://localhost:8092 real"
+    "test:e2e:real": "node tests/e2e.js http://localhost:8092 real",
+    "test:e2e:supabase": "node tests/e2e.js http://localhost:8093 supabase"
   },
   "devDependencies": {
     "pg": "8.23.1",
-    "playwright": "1.63.0"
+    "playwright": "1.63.0",
+    "supabase": "3.2.0"
   }
 }
