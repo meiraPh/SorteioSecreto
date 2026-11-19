@@ -214,7 +214,7 @@
   async function copiar(texto, msgOk) {
     let ok = false;
     try { await navigator.clipboard.writeText(texto); ok = true; } catch (e) {
-      const ta = h('textarea', { style: 'position:fixed;top:0;left:0;opacity:0' });
+      const ta = h('textarea', { class: 'copia-oculta' });
       ta.value = texto; document.body.append(ta); ta.select();
       try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
       ta.remove();

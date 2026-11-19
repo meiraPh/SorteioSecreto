@@ -896,3 +896,7 @@ input[readonly] { background: var(--papel-2); color: var(--tinta-2); font-size: 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Antes eram atributos style inline, que a CSP estrita bloqueia. Mesmo efeito. */
+.copia-oculta { position: fixed; top: 0; left: 0; opacity: 0; }
+.sem-js { padding: 20px; }
