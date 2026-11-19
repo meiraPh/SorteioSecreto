@@ -1,0 +1,34 @@
+# Backlog
+
+Cada tarefa tem critério de aceite e responsável. Estados: `a fazer`, `fazendo`, `aguardando` (depende de alguém), `feito`.
+
+## Fases da infraestrutura
+
+| # | Tarefa | Critério de aceite | Responsável | Estado |
+|---|---|---|---|---|
+| F0 | Reconhecimento e plano | Testes do zip rodando localmente; plano aprovado | Claude | feito (19/11/2026) |
+| F1.1 | Linha de base no git | Primeiro commit idêntico ao zip, byte a byte | Claude | feito |
+| F1.2 | Estrutura, README e docs | Site abre localmente em modo demonstração; testes verdes depois da reorganização | Claude | feito |
+| F1.3 | Repositório no GitHub e proteção da `main` | `main` só aceita mudança por PR | Claude | a fazer |
+| F2.1 | Supabase CLI e migração versionada | `supabase db reset` recria tudo; `sql-test` verde; SQL idêntico ao `schema.sql` | Claude | a fazer |
+| F2.2 | Prova de que nenhuma tabela aparece na API | Teste automático contra o PostgREST real | Claude | a fazer |
+| F2.3 | Criar os projetos de staging e produção no Supabase | Dois projetos em São Paulo; ref, URL e publishable key de cada um entregues | Pedro | a fazer |
+| F3 | CI em todo PR | SQL, E2E contra PostgREST real e E2E demo obrigatórios para o merge; capturas como artefato | Claude | a fazer |
+| F4.1 | Conta na Cloudflare e segredos | API token e account id gravados nos segredos do GitHub | Pedro | a fazer |
+| F4.2 | Deploy do site | Staging e produção no ar; `config.js` gerado no deploy; CSP sem `unsafe-inline`; smoke E2E contra staging | Claude | a fazer |
+| F4.3 | Trocar `style` inline por classe | `copiar` em `app.js` e `<noscript>` em `index.html` sem atributo `style`; E2E sem violação de CSP no console | Claude | a fazer |
+| F5 | Pipeline de migrações | Migração inofensiva passa por staging, aprovação manual e produção | Claude | a fazer |
+| F6.1 | Keep-alive do plano grátis | Tarefa semanal chamando `evento_publico` com código inexistente, rodando | Claude | a fazer |
+| F6.2 | Backup cifrado | `pg_dump` diário cifrado com `age`, artefato por 14 dias; restauração testada uma vez | Claude (chave: Pedro) | a fazer |
+| F6.3 | Monitoramento | Checagem da página e da RPC com alerta para o Pedro | Claude | a fazer |
+| F6.4 | Runbook | `docs/operacao.md` completo e revisado | Pedro revisa | a fazer |
+| F7 | Go-live | Sorteio de teste com 3 nomes criado e apagado em produção; teste em iOS e Android pelo WhatsApp; cabeçalhos revisados; Pedro cria o sorteio real | Pedro | a fazer |
+
+## Ideias e pendências (sem data)
+
+| # | Item | Critério de aceite | Responsável | Estado |
+|---|---|---|---|---|
+| B-01 | Limite contra abuso em `criar_evento` | Criações em excesso são recusadas sem atrapalhar o uso normal; regra igual no SQL e no modo demonstração | a definir | a fazer |
+| B-02 | Domínio próprio | Site responde no domínio com HTTPS; CSP e links atualizados | Pedro decide | a fazer |
+| B-03 | Docker na máquina do Pedro | `supabase start` roda localmente | Pedro decide | a fazer |
+| B-04 | Atualizar o comentário do topo do SQL | O cabeçalho deixa de mandar colar o arquivo no SQL Editor | Claude | a fazer |

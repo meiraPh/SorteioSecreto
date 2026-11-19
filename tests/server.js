@@ -10,7 +10,7 @@ const { Pool } = require('pg');
 
 const PORTA = Number(process.argv[2] || 8080);
 const MODO = process.argv[3] || 'real';
-const RAIZ = path.resolve(__dirname, '..');
+const RAIZ = path.resolve(__dirname, '..', 'src');
 const pool = new Pool();
 const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.woff2': 'font/woff2' };
 const PERMITIDAS = new Set(['criar_evento', 'evento_publico', 'resgatar', 'entrar', 'salvar_lista', 'painel', 'resetar_pin']);

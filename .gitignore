@@ -1,3 +1,9 @@
-tests/node_modules/
+node_modules/
 tests/shots/
+/dist/
+.env*
+.dev.vars*
+.wrangler/
+supabase/.temp/
+supabase/.branches/
 .DS_Store

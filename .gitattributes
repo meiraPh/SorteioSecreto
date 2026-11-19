@@ -1,0 +1,4 @@
+# Fim de linha sempre LF, em qualquer sistema (o clone no Windows não converte para CRLF).
+* text=auto eol=lf
+*.woff2 binary
+*.png binary
