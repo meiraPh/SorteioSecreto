@@ -224,7 +224,9 @@
           const o = String(it.obs || '').trim();
           if (!d || d.length > 120 || o.length > 200) return falha('item_invalido');
           if (l && (l.length > 600 || !/^https?:\/\/\S+$/i.test(l))) return falha('link_invalido');
-          itens.push({ descricao: d, link: l || null, obs: o || null });
+          const pr = it.preco;
+          if (pr != null && (typeof pr !== 'number' || !Number.isFinite(pr) || pr <= 0 || pr > 100000)) return falha('preco_invalido');
+          itens.push({ descricao: d, link: l || null, obs: o || null, preco: pr == null ? null : Math.round(pr * 100) / 100 });
         }
         const p = pessoas.get(pid);
         p.tamanhos = limpa(tamanhos, 300);

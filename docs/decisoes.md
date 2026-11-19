@@ -211,3 +211,11 @@ Registro das decisões relevantes do projeto. Cada entrada tem data, decisão, a
 - **Alternativas:** dedicatória como título (D-24); dedicatória no rodapé da página.
 - **Motivo:** pedido do Pedro depois de ver o site: inverter a ordem, deixando o título principal com o nome do site e a dedicatória como nota.
 - **Quem decidiu:** Pedro.
+
+## D-27 · Cartão do presente com loja e preço aproximado, sem buscar nada na loja
+
+- **Data:** 19/11/2026
+- **Decisão:** cada presente ganha um campo opcional "Preço aproximado", digitado por quem monta a lista (migração `20261119200000_preco_aproximado.sql`, com a mesma regra no SQL e no modo demonstração: número de 0,01 a 100.000, guardado em centavos). Quem tirou a pessoa vê, no cartão do presente, o nome da loja reconhecido pelo link ("Amazon", "Mercado Livre", "Magalu"...) numa etiqueta, e "cerca de R$ 89,90". Loja desconhecida continua aparecendo pelo domínio.
+- **Alternativas:** buscar imagem, título e preço direto na página da loja; usar a API oficial do Mercado Livre (só cobre o Mercado Livre); serviço de terceiros de pré-visualização de links.
+- **Motivo:** em teste com cinco lojas, nenhuma entregou imagem, título ou preço a um pedido automático (Amazon 404, Magalu 403, Shopee captcha, Mercado Livre sem os dados), e contornar a proteção das lojas não é aceitável. Mostrar a imagem direto da loja também abriria a CSP a terceiros e avisaria a loja de quem está vendo a lista. "Preço médio" exigiria consultar várias lojas, com o mesmo bloqueio. Imagem do produto, se um dia vier, entra junto com a foto de perfil (anexada pela pessoa).
+- **Quem decidiu:** Pedro, sobre recomendação do Claude.

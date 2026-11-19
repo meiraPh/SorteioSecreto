@@ -72,7 +72,15 @@ console.log('✓ build recusa chave secret e configuração pela metade; --demo 
 
 // --- nenhum style inline sobrou no site (a CSP bloquearia)
 const fonte = ['index.html', 'app.js'].map((f) => fs.readFileSync(path.join(__dirname, '..', 'src', f), 'utf8')).join('\n');
-assert.ok(!/style\s*[:=]\s*['"]/.test(fonte), 'atributo style inline no site');
+// Pega atributo HTML (style="...") e atributo montado no JS com declaração CSS
+// ({ style: 'position:fixed' } ou setAttribute('style', ...)). Não confunde com
+// opções como Intl.NumberFormat({ style: 'currency' }), que não têm ":" nem ";".
+const inline = [/\sstyle\s*=\s*['"]/, /style\s*:\s*['"][^'"]*[:;][^'"]*['"]/, /setAttribute\(\s*['"]style['"]/, /\.style\.cssText\s*=/];
+for (const re of inline) assert.ok(!re.test(fonte), `atributo style inline no site (${re})`);
+for (const ruim of ["h('textarea', { style: 'position:fixed;top:0;left:0;opacity:0' })", '<p style="padding:20px">', "el.setAttribute('style', 'color:red')"]) {
+  assert.ok(inline.some((re) => re.test(ruim)), 'a checagem pega: ' + ruim);
+}
+assert.ok(!inline.some((re) => re.test("toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })")), 'opção do Intl não é style inline');
 console.log('✓ nenhum atributo style inline em index.html e app.js');
 
 fs.rmSync(tmp, { recursive: true, force: true });

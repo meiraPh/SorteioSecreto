@@ -120,6 +120,7 @@
     lista_invalida: 'A lista pode ter até 20 presentes.',
     item_invalido: 'Cada presente precisa de um nome de até 120 letras. A observação vai até 200.',
     link_invalido: 'Um dos links não parece válido. Use o endereço completo da loja, começando com https://',
+    preco_invalido: 'Um dos preços não parece válido. Use só o número, por exemplo 89,90.',
   };
 
   function msgErro(r) {
@@ -227,6 +228,44 @@
   function dominio(u) {
     try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; }
   }
+
+  // Lojas conhecidas: o cartão do presente mostra o nome da loja no lugar do domínio.
+  // Nada é buscado na loja; é só uma tabela local.
+  const LOJAS = [
+    ['amazon.com.br', 'Amazon'], ['amazon.com', 'Amazon'], ['amzn.to', 'Amazon'],
+    ['mercadolivre.com.br', 'Mercado Livre'], ['mercadolivre.com', 'Mercado Livre'], ['mercadolibre.com', 'Mercado Livre'],
+    ['magazineluiza.com.br', 'Magalu'], ['magalu.com', 'Magalu'], ['shopee.com.br', 'Shopee'],
+    ['americanas.com.br', 'Americanas'], ['submarino.com.br', 'Submarino'], ['shoptime.com.br', 'Shoptime'],
+    ['shein.com', 'Shein'], ['aliexpress.com', 'AliExpress'], ['casasbahia.com.br', 'Casas Bahia'],
+    ['pontofrio.com.br', 'Ponto'], ['extra.com.br', 'Extra'], ['carrefour.com.br', 'Carrefour'],
+    ['kabum.com.br', 'KaBuM!'], ['fastshop.com.br', 'Fast Shop'], ['netshoes.com.br', 'Netshoes'],
+    ['centauro.com.br', 'Centauro'], ['decathlon.com.br', 'Decathlon'], ['lojasrenner.com.br', 'Renner'],
+    ['renner.com.br', 'Renner'], ['cea.com.br', 'C&A'], ['riachuelo.com.br', 'Riachuelo'], ['zara.com', 'Zara'],
+    ['hering.com.br', 'Hering'], ['leroymerlin.com.br', 'Leroy Merlin'], ['tokstok.com.br', 'Tok&Stok'],
+    ['camicado.com.br', 'Camicado'], ['boticario.com.br', 'O Boticário'], ['natura.com.br', 'Natura'],
+    ['sephora.com.br', 'Sephora'], ['belezanaweb.com.br', 'Beleza na Web'], ['epocacosmeticos.com.br', 'Época Cosméticos'],
+    ['estantevirtual.com.br', 'Estante Virtual'], ['livrariacultura.com.br', 'Livraria Cultura'], ['travessa.com.br', 'Travessa'],
+    ['nike.com.br', 'Nike'], ['adidas.com.br', 'adidas'], ['apple.com', 'Apple'],
+  ];
+  function nomeLoja(u) {
+    const host = dominio(u);
+    const achada = LOJAS.find(([d]) => host === d || host.endsWith('.' + d));
+    return achada ? achada[1] : host;
+  }
+
+  // Preço aproximado: a pessoa digita ("89,90", "R$ 1.299", "90"); o banco guarda número.
+  function lerPreco(s) {
+    let t = String(s || '').trim().replace(/^R\$\s*/i, '').replace(/\s/g, '');
+    if (!t) return { ok: true, valor: null };
+    if (/^\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(t)) t = t.replace(/\./g, '').replace(',', '.');
+    else if (/^\d+(,\d{1,2})?$/.test(t)) t = t.replace(',', '.');
+    else if (!/^\d+(\.\d{1,2})?$/.test(t)) return { ok: false };
+    const v = Number(t);
+    return v > 0 && v <= 100000 ? { ok: true, valor: Math.round(v * 100) / 100 } : { ok: false };
+  }
+  const precoBR = (v) => Number(v).toLocaleString('pt-BR', {
+    style: 'currency', currency: 'BRL', minimumFractionDigits: Number.isInteger(Number(v)) ? 0 : 2, maximumFractionDigits: 2 });
+  const precoNoCampo = (v) => (v == null ? '' : Number.isInteger(Number(v)) ? String(Number(v)) : Number(v).toFixed(2).replace('.', ','));
   function normalizarLink(s) {
     let t = String(s || '').trim();
     if (!t) return '';
@@ -1034,13 +1073,15 @@
       h('div', { class: 'desejo-corpo' },
         h('p', { class: 'desejo-t' }, x.descricao),
         x.obs ? h('p', { class: 'desejo-obs' }, x.obs) : null,
-        temLink ? h('p', { class: 'desejo-dom' }, icone('link'), dominio(x.link)) : null),
+        (temLink || x.preco != null) ? h('p', { class: 'desejo-meta' },
+          temLink ? h('span', { class: 'pill pill-neutro desejo-loja' }, icone('link'), nomeLoja(x.link)) : null,
+          x.preco != null ? h('span', { class: 'desejo-preco' }, `cerca de ${precoBR(x.preco)}`) : null) : null),
       temLink ? h('a', { class: 'btn btn-secundario btn-p desejo-btn', href: x.link, target: '_blank', rel: 'noopener noreferrer nofollow' }, 'Ver na loja', icone('externo')) : null);
   }
 
   function abaMinhaLista(d) {
-    const itens = (d.eu.desejos || []).map((x) => ({ descricao: x.descricao, link: x.link || '', obs: x.obs || '' }));
-    if (!itens.length) itens.push({ descricao: '', link: '', obs: '' });
+    const itens = (d.eu.desejos || []).map((x) => ({ descricao: x.descricao, link: x.link || '', obs: x.obs || '', preco: precoNoCampo(x.preco) }));
+    if (!itens.length) itens.push({ descricao: '', link: '', obs: '', preco: '' });
     const tamAtual = lerTamanhos(d.eu.tamanhos);
     const selCamisa = h('select', { id: 't-camisa' },
       h('option', { value: '' }, '—'), CAMISAS.map((c) => h('option', { value: c }, c)));
@@ -1067,6 +1108,8 @@
           h('div', { class: 'campo' }, h('label', { for: `l-${i}` }, 'Link da loja ', h('span', { class: 'opcional' }, 'opcional')),
             h('div', { class: 'campo-ic' }, icone('link'),
               campo('link', { id: `l-${i}`, type: 'url', inputmode: 'url', maxlength: 600, placeholder: 'Cole o link do produto' }))),
+          h('div', { class: 'campo' }, h('label', { for: `p-${i}` }, 'Preço aproximado ', h('span', { class: 'opcional' }, 'opcional')),
+            campo('preco', { id: `p-${i}`, inputmode: 'decimal', maxlength: 14, placeholder: 'R$ 90' })),
           h('div', { class: 'campo' }, h('label', { for: `o-${i}` }, 'Observação ', h('span', { class: 'opcional' }, 'opcional')),
             campo('obs', { id: `o-${i}`, maxlength: 200, placeholder: 'Cor azul, tamanho P, qualquer edição' })));
       }));
@@ -1074,7 +1117,7 @@
     }
 
     btnAdd.addEventListener('click', () => {
-      itens.push({ descricao: '', link: '', obs: '' });
+      itens.push({ descricao: '', link: '', obs: '', preco: '' });
       desenhar();
       const todos = listaEl.querySelectorAll('.item');
       const ultimo = todos[todos.length - 1];
@@ -1089,10 +1132,12 @@
         const it = itens[i];
         const descricao = it.descricao.trim(), obs = it.obs.trim();
         const link = normalizarLink(it.link);
-        if (!descricao && !link && !obs) continue;
+        const preco = lerPreco(it.preco);
+        if (!descricao && !link && !obs && !String(it.preco || '').trim()) continue;
         if (!descricao) { erro.textContent = `Dê um nome para o presente ${i + 1}, por exemplo "Fone de ouvido".`; return; }
         if (link && !linkSeguro(link)) { erro.textContent = `O link do presente ${i + 1} não parece válido. Copie o endereço completo da loja.`; return; }
-        limpos.push({ descricao, link: link || null, obs: obs || null });
+        if (!preco.ok) { erro.textContent = `O preço do presente ${i + 1} não parece válido. Use só o número, por exemplo 89,90.`; return; }
+        limpos.push({ descricao, link: link || null, obs: obs || null, preco: preco.valor });
       }
       if (limpos.length > 20) { erro.textContent = MSG.lista_invalida; return; }
       const calca = inCalca.value.trim(), calcado = inCalcado.value.trim();

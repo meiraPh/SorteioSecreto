@@ -44,7 +44,9 @@ Prioridade definida pelo Pedro: 4, 5, 2, 1, 3.
 | R1-5 | Recuperar o painel do organizador | Aparelho lembra do painel; botão "Mandar para mim"; SQL de link novo no runbook, testado; nenhuma função pública nova (D-22) | Claude | feito no PR da rodada 1; falta o teste do Pedro no preview |
 | R1-2 | Dedicatória e easter eggs | Título "Com carinho, para a Maria Clara."; papelzinho e selo com os recados (D-24) | Claude | feito no PR da rodada 1; falta o teste do Pedro no preview |
 | R1-1 | Adicionar à agenda | Horário e local opcionais na criação; Google Agenda e `.ics` com os dados certos e sem o resultado; conferido no celular aberto pelo WhatsApp (iOS e Android) (D-23) | Claude; teste no celular: Pedro | feito no PR da rodada 1; falta o teste em iOS e Android |
-| R1-3 | Foto de perfil | Ver proposta abaixo; Pedro decide antes de começar | Pedro decide | aguardando |
+| R1-3 | Foto de perfil | Ver proposta abaixo; Pedro decide antes de começar | Pedro decide | adiado pelo Pedro para depois do go-live |
+| R1-6 | Cartão do presente com loja e preço | Etiqueta com o nome da loja reconhecido pelo link; "cerca de R$ 89,90" quando a pessoa informa o preço; preço inválido recusado no site e no banco (D-27) | Claude | feito no PR do cartão; falta o teste do Pedro no staging |
+| R1-7 | Imagem do produto no cartão | Anexada pela pessoa (não buscada na loja), junto com a foto de perfil | Pedro decide | depois do go-live |
 
 ### Proposta para R1-3 (foto de perfil), ainda não aprovada
 
