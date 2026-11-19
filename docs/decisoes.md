@@ -195,3 +195,19 @@ Registro das decisões relevantes do projeto. Cada entrada tem data, decisão, a
 - **Alternativas:** "Feito para a família da Maria Clara."; "Para a Maria Clara e a nossa família."
 - **Motivo:** pedido do Pedro, com o texto escolhido entre três opções. É uma exceção deliberada à regra de não mexer no visual aprovado. Quando o nome está trocado, a fonte do papelzinho diminui um pouco para "Maria Clara" caber em telas de 320 px.
 - **Quem decidiu:** Pedro.
+
+## D-25 · Papelzinho da página inicial mostra "XXXX"
+
+- **Data:** 19/11/2026
+- **Decisão:** a ilustração da página inicial mostra "XXXX" (no mesmo itálico serifado) no lugar de "Júlia". O easter egg de D-24 continua: tocar troca por "Maria Clara" e o recado, e tocar de novo volta para "XXXX".
+- **Alternativas:** manter um nome de exemplo.
+- **Motivo:** pedido do Pedro depois de ver o staging. Revê D-24 só neste ponto.
+- **Quem decidiu:** Pedro.
+
+## D-26 · Título da página inicial volta a dizer o que o site é; dedicatória vira nota
+
+- **Data:** 19/11/2026
+- **Decisão:** o `h1` da página inicial passa a ser "Sorteio de *amigo oculto*" (com "amigo oculto" no itálico em destaque). A dedicatória "Com carinho, para a Maria Clara." fica logo abaixo, no estilo do rótulo pequeno em maiúsculas que antes ficava acima do título. Revê D-24 só neste ponto; os easter eggs continuam, com o recado do papelzinho agora "Pedro tiraria você todo ano." (também pedido do Pedro).
+- **Alternativas:** dedicatória como título (D-24); dedicatória no rodapé da página.
+- **Motivo:** pedido do Pedro depois de ver o site: inverter a ordem, deixando o título principal com o nome do site e a dedicatória como nota.
+- **Quem decidiu:** Pedro.
