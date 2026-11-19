@@ -427,15 +427,15 @@
     cenaPapel.addEventListener('click', () => {
       const dedicado = cenaPapel.classList.toggle('dedicado');
       cenaPapel.querySelector('.papel-nome').textContent = dedicado ? 'Maria Clara' : 'XXXX';
-      cenaPapel.querySelector('.papel-rodape').textContent = dedicado ? 'Eu tiraria você todo ano.' : 'Segredo até 24 de dezembro';
+      cenaPapel.querySelector('.papel-rodape').textContent = dedicado ? 'Pedro tiraria você todo ano.' : 'Segredo até 24 de dezembro';
     });
     const salvos = paineisSalvos();
 
     montar(true, [
       h('section', { class: 'hero' },
         h('div', { class: 'hero-texto' },
-          h('p', { class: 'sobre' }, 'Sorteio de amigo oculto'),
-          h('h1', { class: 'hero-h' }, 'Com carinho, ', h('em', null, 'para a Maria Clara.')),
+          h('h1', { class: 'hero-h' }, 'Sorteio de ', h('em', null, 'amigo oculto')),
+          h('p', { class: 'sobre hero-dedicatoria' }, 'Com carinho, para a Maria Clara.'),
           h('p', { class: 'hero-sub' }, 'Cadastre os nomes, mande um link no grupo e pronto. Cada pessoa abre o próprio papelzinho com um PIN de 4 números, quantas vezes precisar até o dia da troca.'),
           h('div', { class: 'hero-acoes' },
             h('a', { class: 'btn btn-acao btn-g', href: '#/criar' }, 'Criar sorteio', icone('seta')),

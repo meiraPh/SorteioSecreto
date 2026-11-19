@@ -412,6 +412,7 @@ input[readonly] { background: var(--papel-2); color: var(--tinta-2); font-size: 
 .hero-texto { display: grid; gap: 18px; align-content: center; }
 .hero-h { font-size: clamp(42px, 8.5vw, 66px); line-height: 1; letter-spacing: -.02em; }
 .hero-h em { color: var(--cranberry); }
+.hero-dedicatoria { margin-top: -6px; }   /* a dedicatória fica colada no título, como nota */
 .hero-sub { font-size: 18px; color: var(--tinta-2); max-width: 32em; }
 .hero-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-top: 6px; }
 .hero-nota { color: var(--tinta-3); font-size: 14px; }
