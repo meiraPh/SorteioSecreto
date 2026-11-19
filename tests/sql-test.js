@@ -110,9 +110,13 @@ async function call(c, fn, args) {
   const giverName = Object.keys(id).find(n => n !== 'Ana' && true); // descobrimos abaixo
   assert.equal((await call(c, 'salvar_lista', { p_participante: id.Ana, p_pin: '4321', p_tamanhos: 'M', p_desejos: [{ descricao: 'x', link: 'javascript:alert(1)' }] })).erro, 'link_invalido');
   assert.equal((await call(c, 'salvar_lista', { p_participante: id.Ana, p_pin: '4321', p_tamanhos: 'M', p_desejos: [{ descricao: '  ' }] })).erro, 'item_invalido');
+  for (const ruim of ['noventa', '90', -5, 0, 100001]) {
+    assert.equal((await call(c, 'salvar_lista', { p_participante: id.Ana, p_pin: '4321', p_tamanhos: 'M', p_desejos: [{ descricao: 'x', preco: ruim }] })).erro, 'preco_invalido', `preço ${JSON.stringify(ruim)}`);
+  }
   const sl = await call(c, 'salvar_lista', { p_participante: id.Ana, p_pin: '4321', p_tamanhos: 'Camisa M, calçado 37',
-    p_desejos: [{ descricao: 'Livro Torto Arado', link: 'https://www.amazon.com.br/dp/8582101977', obs: 'capa dura' }, { descricao: 'Vela aromática' }] });
+    p_desejos: [{ descricao: 'Livro Torto Arado', link: 'https://www.amazon.com.br/dp/8582101977', obs: 'capa dura', preco: 89.904 }, { descricao: 'Vela aromática', preco: null }] });
   assert.ok(sl.ok); assert.equal(sl.eu.desejos.length, 2); assert.equal(sl.eu.desejos[1].link, null);
+  assert.equal(sl.eu.desejos[0].preco, 89.9, 'preço arredondado em centavos'); assert.equal(sl.eu.desejos[1].preco, null);
 
   // resgata todo mundo e acha quem tirou a Ana
   const pins = { Ana: '4321' };
@@ -124,6 +128,7 @@ async function call(c, fn, args) {
       quemTirouAna = nome;
       assert.equal(r.amigo.desejos.length, 2); assert.equal(r.amigo.tamanhos, 'Camisa M, calçado 37');
       assert.equal(r.amigo.desejos[0].link, 'https://www.amazon.com.br/dp/8582101977');
+      assert.equal(r.amigo.desejos[0].preco, 89.9, 'quem tirou vê o preço');
     }
   }
   assert.ok(quemTirouAna);

@@ -773,6 +773,9 @@ input[readonly] { background: var(--papel-2); color: var(--tinta-2); font-size: 
 .desejo-corpo { display: grid; gap: 2px; min-width: 0; }
 .desejo-t { font-size: 16px; font-weight: 650; }
 .desejo-obs { color: var(--tinta-2); font-size: 14.5px; }
+.desejo-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 6px; min-width: 0; }
+.desejo-loja { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.desejo-preco { font-size: 14px; font-weight: 600; color: var(--tinta); }
 .desejo-dom { display: flex; align-items: center; gap: 5px; margin-top: 2px; color: var(--tinta-3); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .desejo-dom .ic { width: 13px; height: 13px; }
 .vazio { display: flex; align-items: center; gap: 12px; padding: 16px; border-radius: 12px; background: var(--papel-2); color: var(--tinta-2); font-size: 15px; }
