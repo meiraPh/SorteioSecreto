@@ -133,8 +133,14 @@ const CASAIS = [['Vó Lúcia', 'Vô Antônio'], ['Tia Rose', 'Tio Marcos']];
       const ics = decodeURIComponent((await page.getAttribute('#btn-ics', 'href')).split(',').slice(1).join(','));
       assert.match(ics, /DTSTART:\d{8}T223000Z/, 'ics em UTC (19h30 de Brasília)');
       assert.ok(ics.includes('LOCATION:Casa da vó') && ics.includes('BEGIN:VEVENT'));
-      const tudo = g.toString() + ics;
-      assert.ok(!tudo.includes(resultado[n].tirou) && !tudo.includes(encodeURIComponent(resultado[n].tirou)), 'agenda não leva quem a pessoa tirou');
+      // O nome de quem a pessoa tirou só pode aparecer tantas vezes quanto já aparece nos dados
+      // públicos do evento (ex.: tirou "Pedro", que também é quem organiza).
+      const vezes = (texto, s) => texto.split(s).length - 1;
+      const tirou = resultado[n].tirou;
+      const publico = ['Pedro', 'R$ 100', 'Casa da vó', 'Troca na ceia do dia 24, na casa da vó.\nPresente com nota para trocar.', await page.textContent('.pessoa-cab .sobre')].join('\n');
+      for (const [onde, texto] of [['google', [...g.searchParams.values()].join('\n')], ['ics', ics.replace(/\r\n /g, '').replace(/\\n/g, '\n').replace(/\\([,;\\])/g, '$1')]]) {
+        assert.ok(vezes(texto, tirou) <= vezes(publico, tirou), `agenda (${onde}) não leva quem a pessoa tirou (${tirou})`);
+      }
       console.log('✓ adicionar à agenda: Google e .ics com horário e local, sem o resultado');
     }
     if (i === 0) {
