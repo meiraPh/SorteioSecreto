@@ -35,10 +35,10 @@ node scripts/segredo-db.js producao <ref-producao>
 
 O `SUPABASE_DB_URL` de produção fica no ambiente `producao`, que só libera o segredo depois da sua aprovação. O host padrão do pooler é o de São Paulo (`aws-1-sa-east-1.pooler.supabase.com`); se o painel mostrar outro, passe-o como terceiro argumento.
 
-Os da Cloudflare pedem o valor sem mostrar na tela:
+Os da Cloudflare: o script do token confere com a Cloudflare antes de gravar (e limpa um `Bearer ` colado junto); o Account ID não é segredo, mas fica como segredo para o wrangler:
 
 ```bash
-gh secret set CLOUDFLARE_API_TOKEN
+node scripts/segredo-cloudflare.js
 gh secret set CLOUDFLARE_ACCOUNT_ID
 ```
 
