@@ -12,9 +12,9 @@ Cada tarefa tem critério de aceite e responsável. Estados: `a fazer`, `fazendo
 | F1.3 | Repositório no GitHub e proteção da `main` | `main` só aceita mudança por PR | Claude | feito |
 | F2.1 | Supabase CLI e migração versionada | `supabase db reset` recria tudo; `sql-test` verde; SQL idêntico ao `schema.sql` | Claude | feito (CI verde no PR 1) |
 | F2.2 | Prova de que nenhuma tabela aparece na API | Teste automático contra o PostgREST real (`tests/api-test.js`) | Claude | feito (CI verde no PR 1) |
-| F2.3 | Criar os projetos de staging e produção no Supabase | Dois projetos em São Paulo; passo 1 de "Configuração inicial" em operacao.md | Pedro | a fazer |
-| F3 | CI em todo PR | SQL, E2E contra PostgREST real e E2E demo obrigatórios para o merge; capturas como artefato | Claude | feito; falta tornar o job obrigatório depois do merge do PR 1 |
-| F4.1 | Conta na Cloudflare, segredos e variáveis | Passos 2 a 4 de "Configuração inicial" em operacao.md | Pedro | a fazer |
+| F2.3 | Criar os projetos de staging e produção no Supabase | Dois projetos em São Paulo; passo 1 de "Configuração inicial" em operacao.md | Pedro | feito (19/11/2026) |
+| F3 | CI em todo PR | SQL, E2E contra PostgREST real e E2E demo obrigatórios para o merge; capturas como artefato | Claude | feito; job Testes obrigatório na `main` |
+| F4.1 | Conta na Cloudflare, segredos e variáveis | Passos 2 a 4 de "Configuração inicial" em operacao.md | Pedro | feito (19/11/2026) |
 | F4.2 | Deploy do site | Staging e produção no ar; `config.js` gerado no deploy; CSP sem `unsafe-inline`; smoke E2E contra staging | Claude | pronto no código (PR 2) |
 | F4.3 | Trocar `style` inline por classe | `copiar` em `app.js` e `<noscript>` em `index.html` sem atributo `style`; E2E sem violação de CSP no console | Claude | feito (PR 2) |
 | F5 | Pipeline de migrações | Migração inofensiva passa por staging, aprovação manual e produção | Claude | pronto no código (PR 2) |

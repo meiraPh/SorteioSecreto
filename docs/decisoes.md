@@ -32,7 +32,7 @@ Registro das decisões relevantes do projeto. Cada entrada tem data, decisão, a
 - **Decisão:** dois projetos separados na região de São Paulo.
 - **Alternativas:** um projeto só, com os previews em modo demonstração.
 - **Motivo:** testar migração e deploy sem tocar nos dados da família.
-- **Pendente:** confirmar que há duas vagas livres no plano grátis da organização.
+- **Confirmado em 19/11/2026:** a conta não tinha organização nem projetos. Foi criada a organização grátis "meiraPh's Org", com `amigo-oculto-staging` e `amigo-oculto` em São Paulo.
 - **Quem decidiu:** Pedro, sobre recomendação do Claude.
 
 ## D-05 · Domínio: subdomínio do provedor
