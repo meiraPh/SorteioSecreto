@@ -32,7 +32,7 @@ Registro das decisões relevantes do projeto. Cada entrada tem data, decisão, a
 - **Decisão:** dois projetos separados na região de São Paulo.
 - **Alternativas:** um projeto só, com os previews em modo demonstração.
 - **Motivo:** testar migração e deploy sem tocar nos dados da família.
-- **Pendente:** confirmar que há duas vagas livres no plano grátis da organização.
+- **Confirmado em 19/11/2026:** a conta não tinha organização nem projetos. Foi criada a organização grátis "meiraPh's Org", com `amigo-oculto-staging` e `amigo-oculto` em São Paulo.
 - **Quem decidiu:** Pedro, sobre recomendação do Claude.
 
 ## D-05 · Domínio: subdomínio do provedor
@@ -122,3 +122,43 @@ Registro das decisões relevantes do projeto. Cada entrada tem data, decisão, a
 - **Alternativas:** redesenhar o site atual para seguir as referências; instalar as skills e plugins que três delas oferecem para agentes.
 - **Motivo:** o visual atual foi aprovado e não muda sem pedido, então os desvios da auditoria viraram itens de backlog (D-01 a D-05 do backlog) para o Pedro decidir. Nada foi instalado: as referências foram lidas como texto.
 - **Quem decidiu:** Pedro.
+
+## D-16 · Build mínimo: copiar `src/` e gerar config e cabeçalhos
+
+- **Data:** 19/11/2026
+- **Decisão:** `scripts/site.js` copia `src/` para `dist/` sem transformar nada e gera o `config.js` e o `_headers` do ambiente. O build recusa chave secret e service_role. O servidor de teste usa as mesmas funções, então o E2E roda com a CSP de verdade.
+- **Alternativas:** bundler; publicar `src/` direto com o `config.js` versionado.
+- **Motivo:** a regra é sem bundler e sem valores no repositório. Gerar a CSP com a origem da API de cada ambiente deixa o `connect-src` restrito a ela.
+- **Quem decidiu:** Claude, dentro do pedido da fase 4.
+
+## D-17 · CSP estrita e cabeçalhos
+
+- **Data:** 19/11/2026
+- **Decisão:** `default-src 'self'`, `script-src` e `style-src` só `'self'` (sem `unsafe-inline`), `img-src 'self' data:`, `font-src 'self'`, `connect-src` com a API do ambiente, `frame-ancestors 'none'`, além de `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy` fechada e `nosniff`. Cache: `no-cache` em tudo e um ano nas fontes. Os dois `style` inline (`copiar` em `app.js` e o `<noscript>`) viraram classes com o mesmo efeito.
+- **Alternativas:** cache longo em JS e CSS, que exigiria hash no nome dos arquivos, ou seja, um build de verdade.
+- **Motivo:** `no-cache` ainda aproveita o cache (o navegador revalida) e garante que todo mundo recebe a versão nova logo depois de um deploy. A CSP foi conferida com uma prova negativa: o `textarea` antigo, com a CSP nova, é bloqueado e gera erro no console, que o E2E acusa.
+- **Quem decidiu:** Claude, dentro do pedido da fase 4.
+
+## D-18 · Migrações pela URL do session pooler
+
+- **Data:** 19/11/2026
+- **Decisão:** o CI aplica migrações com `supabase db push --remote=<URL do session pooler>`. A URL fica como segredo `SUPABASE_DB_URL` em cada ambiente do GitHub, e a de produção só é liberada depois da aprovação manual.
+- **Alternativas:** token pessoal do Supabase mais senha do banco (`supabase link`).
+- **Motivo:** a conexão direta do Supabase é só IPv6, e os runners do GitHub não têm IPv6 (a CLI avisa). A URL do pooler resolve isso e dispensa o token pessoal, que daria acesso à conta inteira.
+- **Quem decidiu:** Claude, dentro do pedido da fase 5. Substitui os segredos `SUPABASE_ACCESS_TOKEN` e `SUPABASE_DB_PASSWORD_*` sugeridos antes.
+
+## D-19 · Configuração em variáveis do repositório; deploy desligado até tudo estar pronto
+
+- **Data:** 19/11/2026
+- **Decisão:** URLs e publishable keys ficam em variáveis do repositório com prefixo `STAGING_` e `PROD_`. O deploy e o vigia só rodam com `DEPLOY_ATIVO=true`. Os ambientes `staging` e `producao` do GitHub só aceitam deploy da `main`, e `producao` exige aprovação do Pedro.
+- **Alternativas:** variáveis por ambiente do GitHub.
+- **Motivo:** o vigia precisa ler as URLs de produção sem pedir aprovação a cada 6 horas. Com o interruptor, os PRs não ficam vermelhos enquanto as contas não existem.
+- **Quem decidiu:** Claude, dentro do pedido das fases 4 a 6.
+
+## D-20 · Vigia a cada 6 horas faz o keep-alive e o monitoramento
+
+- **Data:** 19/11/2026
+- **Decisão:** um workflow agendado confere a página, o `config.js` e a API dos dois ambientes a cada 6 horas. A chamada a `evento_publico` com código inexistente é o keep-alive, e o alerta é o e-mail do GitHub quando o job falha.
+- **Alternativas:** keep-alive semanal separado; serviço externo de monitoramento.
+- **Motivo:** um workflow só cobre as duas coisas, sem conta nova e sem mudar o schema. Seis horas basta para o prazo e fica longe do limite de uso do Actions.
+- **Quem decidiu:** Claude, dentro do pedido da fase 6.

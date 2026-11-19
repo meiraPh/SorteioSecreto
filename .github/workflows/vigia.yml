@@ -1,0 +1,37 @@
+name: Vigia
+
+# A cada 6 horas confere se o site e a API de staging e de produção estão de pé.
+# Serve também de keep-alive: cada checagem chama evento_publico com um código que não
+# existe, o que conta como atividade no banco e evita a pausa do plano grátis do Supabase.
+# Se falhar, o GitHub manda e-mail (Settings > Notifications > Actions, na conta do Pedro).
+#
+# Atenção: em repositório público o GitHub desliga agendamentos depois de 60 dias sem
+# atividade no repositório. Basta reativar em Actions > Vigia > Enable workflow.
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  vigia:
+    name: Vigia (${{ matrix.ambiente }})
+    if: vars.DEPLOY_ATIVO == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        ambiente: [staging, producao]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tests/vigia.js
+        env:
+          SITE_URL: ${{ matrix.ambiente == 'producao' && vars.PROD_SITE_URL || vars.STAGING_SITE_URL }}
+          SUPABASE_URL: ${{ matrix.ambiente == 'producao' && vars.PROD_SUPABASE_URL || vars.STAGING_SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ matrix.ambiente == 'producao' && vars.PROD_SUPABASE_PUBLISHABLE_KEY || vars.STAGING_SUPABASE_PUBLISHABLE_KEY }}

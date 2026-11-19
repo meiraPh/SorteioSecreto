@@ -1,6 +1,6 @@
 # Backlog
 
-Cada tarefa tem critério de aceite e responsável. Estados: `a fazer`, `fazendo`, `aguardando` (depende de alguém), `feito`.
+Cada tarefa tem critério de aceite e responsável. Estados: `a fazer`, `fazendo`, `aguardando` (depende de alguém), `pronto no código` (falta rodar com as contas), `feito`.
 
 ## Fases da infraestrutura
 
@@ -10,17 +10,17 @@ Cada tarefa tem critério de aceite e responsável. Estados: `a fazer`, `fazendo
 | F1.1 | Linha de base no git | Primeiro commit idêntico ao zip, byte a byte | Claude | feito |
 | F1.2 | Estrutura, README e docs | Site abre localmente em modo demonstração; testes verdes depois da reorganização | Claude | feito |
 | F1.3 | Repositório no GitHub e proteção da `main` | `main` só aceita mudança por PR | Claude | feito |
-| F2.1 | Supabase CLI e migração versionada | `supabase db reset` recria tudo; `sql-test` verde; SQL idêntico ao `schema.sql` | Claude | fazendo (prova no CI) |
-| F2.2 | Prova de que nenhuma tabela aparece na API | Teste automático contra o PostgREST real (`tests/api-test.js`) | Claude | fazendo (prova no CI) |
-| F2.3 | Criar os projetos de staging e produção no Supabase | Dois projetos em São Paulo; ref, URL e publishable key de cada um entregues | Pedro | a fazer |
-| F3 | CI em todo PR | SQL, E2E contra PostgREST real e E2E demo obrigatórios para o merge; capturas como artefato | Claude | fazendo |
-| F4.1 | Conta na Cloudflare e segredos | API token e account id gravados nos segredos do GitHub | Pedro | a fazer |
-| F4.2 | Deploy do site | Staging e produção no ar; `config.js` gerado no deploy; CSP sem `unsafe-inline`; smoke E2E contra staging | Claude | a fazer |
-| F4.3 | Trocar `style` inline por classe | `copiar` em `app.js` e `<noscript>` em `index.html` sem atributo `style`; E2E sem violação de CSP no console | Claude | a fazer |
-| F5 | Pipeline de migrações | Migração inofensiva passa por staging, aprovação manual e produção | Claude | a fazer |
-| F6.1 | Keep-alive do plano grátis | Tarefa semanal chamando `evento_publico` com código inexistente, rodando | Claude | a fazer |
-| F6.2 | Backup cifrado | `pg_dump` diário cifrado com `age`, artefato por 14 dias; restauração testada uma vez | Claude (chave: Pedro) | a fazer |
-| F6.3 | Monitoramento | Checagem da página e da RPC com alerta para o Pedro | Claude | a fazer |
+| F2.1 | Supabase CLI e migração versionada | `supabase db reset` recria tudo; `sql-test` verde; SQL idêntico ao `schema.sql` | Claude | feito (CI verde no PR 1) |
+| F2.2 | Prova de que nenhuma tabela aparece na API | Teste automático contra o PostgREST real (`tests/api-test.js`) | Claude | feito (CI verde no PR 1) |
+| F2.3 | Criar os projetos de staging e produção no Supabase | Dois projetos em São Paulo; passo 1 de "Configuração inicial" em operacao.md | Pedro | feito (19/11/2026) |
+| F3 | CI em todo PR | SQL, E2E contra PostgREST real e E2E demo obrigatórios para o merge; capturas como artefato | Claude | feito; job Testes obrigatório na `main` |
+| F4.1 | Conta na Cloudflare, segredos e variáveis | Passos 2 a 4 de "Configuração inicial" em operacao.md | Pedro | feito (19/11/2026) |
+| F4.2 | Deploy do site | Staging e produção no ar; `config.js` gerado no deploy; CSP sem `unsafe-inline`; smoke E2E contra staging | Claude | pronto no código (PR 2) |
+| F4.3 | Trocar `style` inline por classe | `copiar` em `app.js` e `<noscript>` em `index.html` sem atributo `style`; E2E sem violação de CSP no console | Claude | feito (PR 2) |
+| F5 | Pipeline de migrações | Migração inofensiva passa por staging, aprovação manual e produção | Claude | pronto no código (PR 2) |
+| F6.1 | Keep-alive do plano grátis | Tarefa agendada chamando `evento_publico` com código inexistente, rodando | Claude | pronto no código (Vigia, PR 2) |
+| F6.2 | Backup cifrado | `pg_dump` diário cifrado com `age`, artefato por 14 dias; restauração testada uma vez | Claude (chave pública: Pedro) | aguardando a chave pública `age` do Pedro |
+| F6.3 | Monitoramento | Checagem da página e da RPC com alerta para o Pedro | Claude | pronto no código (Vigia, PR 2) |
 | F6.4 | Runbook | `docs/operacao.md` completo e revisado | Pedro revisa | a fazer |
 | F7 | Go-live | Sorteio de teste com 3 nomes criado e apagado em produção; teste em iOS e Android pelo WhatsApp; cabeçalhos revisados; Pedro cria o sorteio real | Pedro | a fazer |
 
@@ -32,6 +32,7 @@ Cada tarefa tem critério de aceite e responsável. Estados: `a fazer`, `fazendo
 | B-02 | Domínio próprio | Site responde no domínio com HTTPS; CSP e links atualizados | Pedro decide | a fazer |
 | B-03 | Docker na máquina do Pedro | `supabase start` roda localmente | Pedro decide | a fazer |
 | B-04 | Atualizar comentários que ainda citam `schema.sql` | O cabeçalho da migração e os comentários de `src/api.js`, `tests/server.js` e `tests/sql-test.js` citam `supabase/migrations/` | Claude | a fazer |
+| B-05 | Limpar sorteios de teste do staging automaticamente | O E2E do deploy apaga o próprio sorteio, ou um job apaga os de mais de 1 dia; nunca roda em produção | Claude | a fazer |
 
 ## Design (da auditoria em [design.md](design.md))
 

@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // Worker só de assets: sem código de servidor. O site é a pasta dist/, montada por
+  // `node scripts/site.js build dist`, com config.js e _headers do ambiente.
+  // Produção usa este nome; staging publica com `--name amigo-oculto-staging`.
+  // A conta vem de CLOUDFLARE_ACCOUNT_ID (segredo do GitHub), não fica aqui.
+  "name": "amigo-oculto",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  // URLs de preview (uma por PR, com --preview-alias) no staging.
+  "preview_urls": true,
+  "assets": {
+    "directory": "./dist"
+  }
+}

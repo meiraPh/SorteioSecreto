@@ -9,6 +9,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
+const site = require('../scripts/site.js');
 
 const PORTA = Number(process.argv[2] || 8080);
 const MODO = process.argv[3] || 'real';
@@ -19,6 +20,10 @@ if (MODO === 'supabase' && !(process.env.SUPABASE_URL && process.env.SUPABASE_PU
   console.error('modo supabase: defina SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY');
   process.exit(1);
 }
+// Mesmos cabeçalhos do deploy (CSP inclusive), para o E2E pegar violação de CSP.
+const ORIGEM_API = MODO === 'supabase' ? site.origemDe(process.env.SUPABASE_URL)
+  : MODO === 'real' ? `http://localhost:${PORTA}` : null;
+const CABECALHOS = site.cabecalhos(ORIGEM_API);
 const PERMITIDAS = new Set(['criar_evento', 'evento_publico', 'resgatar', 'entrar', 'salvar_lista', 'painel', 'resetar_pin']);
 
 http.createServer(async (req, res) => {
@@ -52,15 +57,15 @@ http.createServer(async (req, res) => {
   // arquivos estáticos
   let p = url.pathname === '/' ? '/index.html' : url.pathname;
   if (p === '/config.js' && MODO === 'real') {
-    res.writeHead(200, { 'Content-Type': TIPOS['.js'] });
-    return res.end(`window.AMIGO_CONFIG = { SUPABASE_URL: 'http://localhost:${PORTA}', SUPABASE_KEY: 'sb_publishable_teste' };`);
+    res.writeHead(200, { ...CABECALHOS, 'Cache-Control': 'no-cache', 'Content-Type': TIPOS['.js'] });
+    return res.end(site.configJs(`http://localhost:${PORTA}`, 'sb_publishable_teste'));
   }
   if (p === '/config.js' && MODO === 'supabase') {
-    res.writeHead(200, { 'Content-Type': TIPOS['.js'] });
-    return res.end(`window.AMIGO_CONFIG = { SUPABASE_URL: ${JSON.stringify(process.env.SUPABASE_URL)}, SUPABASE_KEY: ${JSON.stringify(process.env.SUPABASE_PUBLISHABLE_KEY)} };`);
+    res.writeHead(200, { ...CABECALHOS, 'Cache-Control': 'no-cache', 'Content-Type': TIPOS['.js'] });
+    return res.end(site.configJs(process.env.SUPABASE_URL, process.env.SUPABASE_PUBLISHABLE_KEY));
   }
   const arq = path.join(RAIZ, path.normalize(p));
   if (!arq.startsWith(RAIZ) || arq.includes(`${path.sep}tests${path.sep}`) || !fs.existsSync(arq)) { res.writeHead(404); return res.end('nao encontrado'); }
-  res.writeHead(200, { 'Content-Type': TIPOS[path.extname(arq)] || 'application/octet-stream' });
+  res.writeHead(200, { ...CABECALHOS, 'Cache-Control': site.cacheDe(p), 'Content-Type': TIPOS[path.extname(arq)] || 'application/octet-stream' });
   fs.createReadStream(arq).pipe(res);
 }).listen(PORTA, () => console.log(`servidor ${MODO} em http://localhost:${PORTA}`));

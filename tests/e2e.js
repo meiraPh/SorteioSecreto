@@ -17,13 +17,23 @@ const CASAIS = [['Vó Lúcia', 'Vô Antônio'], ['Tia Rose', 'Tio Marcos']];
   const erros = [];
   page.on('pageerror', (e) => erros.push(String(e)));
   page.on('console', (m) => { if (m.type() === 'error') erros.push(m.text()); });
+  // Violação de CSP vira erro: o navegador bloqueou algo que o site tentou fazer.
+  await page.addInitScript(() => {
+    window.__violacoes = [];
+    document.addEventListener('securitypolicyviolation', (ev) => window.__violacoes.push(`${ev.violatedDirective} ${ev.blockedURI}`));
+  });
   const shot = (n, full = true) => page.screenshot({ path: `${SHOTS}/${ROTULO}-${n}.png`, fullPage: full });
   const irPara = async (hash) => { await page.evaluate((h) => { location.hash = h; }, hash); await page.waitForTimeout(60); };
   const digitarPin = async (id, pin) => { await page.click(`#${id}`); await page.keyboard.type(pin); };
   const nome = (n) => `.nome-linha:has(.nome-txt:text-is("${n}"))`;
   const textoErro = () => page.locator('.msg-erro:not(:empty)').first().textContent();
 
-  await page.goto(BASE.endsWith('.html') ? BASE + '#/' : BASE + '/#/');
+  const resp = await page.goto(BASE.endsWith('.html') ? BASE + '#/' : BASE + '/#/');
+  if (BASE.startsWith('http')) {
+    const csp = resp.headers()['content-security-policy'] || '';
+    assert.ok(csp.includes("default-src 'self'") && !csp.includes('unsafe-inline'), 'CSP estrita no cabeçalho: ' + csp);
+    assert.equal(resp.headers()['x-frame-options'], 'DENY');
+  }
   await page.waitForSelector('text=Criar sorteio');
   await page.waitForTimeout(300);
   assert.ok(!(await page.textContent('#app')).includes('null'), 'sem texto null');
@@ -58,6 +68,15 @@ const CASAIS = [['Vó Lúcia', 'Vô Antônio'], ['Tia Rose', 'Tio Marcos']];
   assert.ok((await page.getAttribute('#btn-whats', 'href')).startsWith('https://wa.me/?text='));
   await shot('03-painel-novo');
   console.log('✓ criou o sorteio e abriu o painel');
+
+  // ---------- copiar sem a API de área de transferência (plano B com textarea) ----------
+  await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', {
+    configurable: true, value: { writeText: () => Promise.reject(new Error('negado no teste')) },
+  }));
+  await page.click('button.btn-secundario:has-text("Copiar link")');
+  await page.waitForSelector('.toast.visivel');
+  assert.equal(await page.locator('textarea.copia-oculta').count(), 0, 'textarea do plano B removido');
+  console.log('✓ copiar pelo plano B, sem violar a CSP');
 
   // ---------- cada um pega o nome ----------
   const resultado = {};
@@ -201,6 +220,7 @@ const CASAIS = [['Vó Lúcia', 'Vô Antônio'], ['Tia Rose', 'Tio Marcos']];
   await page.waitForSelector('text=Quem é você?');
   await shot('14-grupo-desktop', false);
 
+  assert.deepEqual(await page.evaluate(() => window.__violacoes), [], 'sem violações de CSP');
   assert.deepEqual(erros, [], 'sem erros no console');
   await browser.close();
   console.log(`\n[${ROTULO}] TODOS OS TESTES DE NAVEGADOR PASSARAM`);
