@@ -84,3 +84,4 @@ Até lá, o caminho manual é:
 - Recados anônimos foram removidos de propósito e não voltam.
 - Decisões vão para [docs/decisoes.md](docs/decisoes.md); ideias e tarefas, para [docs/backlog.md](docs/backlog.md).
 - O dia a dia (redefinir PIN, projeto pausado, apagar evento de teste) está em [docs/operacao.md](docs/operacao.md).
+- As diretrizes de design e a auditoria do visual atual estão em [docs/design.md](docs/design.md).

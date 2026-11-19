@@ -114,3 +114,11 @@ Registro das decisões relevantes do projeto. Cada entrada tem data, decisão, a
 - **Alternativas:** apagar o emulador.
 - **Motivo:** nesta máquina não há Docker (D-10), então o emulador é o único jeito de rodar o E2E com o SQL real fora do CI.
 - **Quem decidiu:** Claude, dentro do pedido da fase 3.
+
+## D-15 · Diretrizes de design: referências do Pedro e do Matheus
+
+- **Data:** 19/11/2026
+- **Decisão:** as cinco referências que o Matheus mandou (designsystemchecklist.com, transitions.dev, beautifului.dev, `heliocosta-dev/revenue-centric-design` e `heydamir/unslop`), mais o artigo do Emil Kowalski, valem como diretriz de design para tudo o que for criado ou alterado daqui para a frente. O resumo aplicável e a auditoria do site atual estão em [design.md](design.md).
+- **Alternativas:** redesenhar o site atual para seguir as referências; instalar as skills e plugins que três delas oferecem para agentes.
+- **Motivo:** o visual atual foi aprovado e não muda sem pedido, então os desvios da auditoria viraram itens de backlog (D-01 a D-05 do backlog) para o Pedro decidir. Nada foi instalado: as referências foram lidas como texto.
+- **Quem decidiu:** Pedro.

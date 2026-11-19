@@ -32,3 +32,15 @@ Cada tarefa tem critério de aceite e responsável. Estados: `a fazer`, `fazendo
 | B-02 | Domínio próprio | Site responde no domínio com HTTPS; CSP e links atualizados | Pedro decide | a fazer |
 | B-03 | Docker na máquina do Pedro | `supabase start` roda localmente | Pedro decide | a fazer |
 | B-04 | Atualizar comentários que ainda citam `schema.sql` | O cabeçalho da migração e os comentários de `src/api.js`, `tests/server.js` e `tests/sql-test.js` citam `supabase/migrations/` | Claude | a fazer |
+
+## Design (da auditoria em [design.md](design.md))
+
+Nenhum destes foi feito: o visual aprovado não muda sem o aval do Pedro.
+
+| # | Item | Critério de aceite | Responsável | Estado |
+|---|---|---|---|---|
+| D-01 | Aumentar os alvos de toque sem mudar o desenho | "Sou {nome}", "Volte para a lista", botões pequenos e de ícone com área de toque de 44 px; capturas do E2E iguais às atuais | Pedro decide; Claude faz | a fazer |
+| D-02 | Escurecer o texto apagado (`--tinta-3`) | Contraste de pelo menos 4,5:1 no branco e no fundo papel; Pedro aprova a cor | Pedro decide; Claude faz | a fazer |
+| D-03 | Erros com saída e avisos legíveis | Tela de erro de rede com botão "Tentar de novo"; toast de erro fica pelo menos 5 s; erro do formulário de criação aparece junto do campo | Pedro decide; Claude faz | a fazer |
+| D-04 | Manter o foco ao trocar de tela | Trocar de aba e abrir ou esconder o papelzinho deixam o foco num elemento equivalente; conferido com teclado | Pedro decide; Claude faz | a fazer |
+| D-05 | Demais desvios de contraste, tokens e consistência | Cada item da lista "mudam o visual" de design.md aceito ou recusado pelo Pedro | Pedro | a fazer |
