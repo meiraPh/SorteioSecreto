@@ -35,12 +35,18 @@ async function pedir(metodo, caminho, { headers, corpo } = {}) {
   assert.deepEqual(viva.json, { ok: false, erro: 'evento_nao_encontrado' });
   console.log('✓ API no ar: evento_publico responde');
 
-  // --- sem chave não entra
+  // --- sem chave não entra. Quem barra é o gateway do Supabase hospedado; o gateway da
+  // stack local (`supabase start`) deixa passar como anon, então lá só registramos.
+  // Não é furo do nosso modelo: a chave publicável é pública e dá o mesmo acesso de anon.
   const semChave = await fetch(`${URL_BASE}/rest/v1/rpc/evento_publico`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ p_codigo: 'naoexiste' }),
   });
-  assert.equal(semChave.status, 401, 'sem apikey a API recusa');
-  console.log('✓ sem apikey: 401');
+  if (/\.supabase\.co$/.test(new URL(URL_BASE).hostname)) {
+    assert.equal(semChave.status, 401, 'sem apikey o Supabase hospedado recusa');
+    console.log('✓ sem apikey: 401');
+  } else {
+    console.log(`– sem apikey: ${semChave.status} (stack local não exige a chave; checado só em projeto hospedado)`);
+  }
 
   // --- tabelas não existem para a API
   for (const t of TABELAS) {
