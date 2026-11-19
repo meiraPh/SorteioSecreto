@@ -162,3 +162,36 @@ Registro das decisões relevantes do projeto. Cada entrada tem data, decisão, a
 - **Alternativas:** keep-alive semanal separado; serviço externo de monitoramento.
 - **Motivo:** um workflow só cobre as duas coisas, sem conta nova e sem mudar o schema. Seis horas basta para o prazo e fica longe do limite de uso do Actions.
 - **Quem decidiu:** Claude, dentro do pedido da fase 6.
+
+## D-21 · Tamanhos em campos, guardados no mesmo texto
+
+- **Data:** 19/11/2026
+- **Decisão:** "Tamanhos e preferências" virou camisa (PP a XG), calça e calçado (só números) e outras preferências. Tudo continua na coluna `tamanhos` (texto), uma linha por campo: `Camisa: M`, `Calça: 40`, `Calçado: 37`, `Outras: ...`. Texto antigo, sem rótulo, aparece como "Outras".
+- **Alternativas:** colunas novas no banco, com migração e regra no SQL e no modo demonstração.
+- **Motivo:** menor mudança. O banco e o modo demonstração não mudam (o limite de 300 caracteres continua), e as listas já salvas seguem aparecendo.
+- **Quem decidiu:** pedido do Pedro (feedback 4 da rodada 1); formato de gravação escolhido pelo Claude.
+
+## D-22 · Painel do organizador: recuperar sem abrir porta nova
+
+- **Data:** 19/11/2026
+- **Decisão:** três caminhos, nenhum público: (1) o aparelho que abriu o painel lembra dele na página inicial (armazenamento do navegador, até 5 sorteios, nunca no modo demonstração); (2) botão "Mandar para mim", que usa o compartilhar do celular ou, sem ele, o WhatsApp; (3) quem administra o banco gera um link novo por SQL, e o antigo para de funcionar (passo a passo em operacao.md).
+- **Alternativas:** código de recuperação de 12 caracteres, guardado como hash e com bloqueio após erros; senha do organizador.
+- **Motivo:** quem entra no painel pode redefinir o PIN de alguém e ver o resultado daquela pessoa, então o acesso ao painel é tão sensível quanto o próprio sorteio. Senha seria adivinhável por quem tem o link do grupo. O código de recuperação seria seguro, mas é mais uma função pública, e quem perde o link costuma perder o código junto. Limite: no aparelho que lembra do painel, quem pegar o celular destravado também abre, como já acontece com a conversa do WhatsApp.
+- **Quem decidiu:** Pedro, sobre recomendação do Claude.
+
+## D-23 · Horário, local e "Adicionar à agenda"
+
+- **Data:** 19/11/2026
+- **Decisão:** o sorteio ganha horário (`HH:MM`) e local, ambos opcionais (migração `20261119180000_horario_e_local.sql`, com a mesma regra no SQL e no modo demonstração). No papelzinho, dois botões: **Google Agenda** (link que abre o evento preenchido) e **Agenda do iPhone** (arquivo `.ics`). O evento dura 3 horas, usa o horário de Brasília (UTC-3 o ano todo) e leva título, organização, valor, recado e o link do grupo. **Nunca leva quem a pessoa tirou.** Sem horário, vira evento de dia inteiro.
+- **Alternativas:** só a data, sem mexer no banco; integração com a API das agendas.
+- **Motivo:** sem horário e local o evento sai incompleto. Integração de verdade exigiria login e permissões. Limite honesto: um toque abre o evento preenchido; salvar é o toque do próprio app de agenda. O `.ics` no iPhone, aberto de dentro do WhatsApp, precisa ser conferido num aparelho de verdade (checklist do go-live).
+- **Consequência:** o sorteio não pode ser editado depois, então o sorteio real da família precisa ser criado depois que esta mudança estiver em produção.
+- **Quem decidiu:** Pedro, sobre recomendação do Claude.
+
+## D-24 · Dedicatória e dois easter eggs
+
+- **Data:** 19/11/2026
+- **Decisão:** o título da página inicial passou a ser "Com carinho, *para a Maria Clara.*". Dois easter eggs: tocar no papelzinho da ilustração da página inicial troca "Júlia" por "Maria Clara" e o rodapé por "Eu tiraria você todo ano." (tocar de novo desfaz); três toques seguidos no selo da marca mostram o aviso "Este site existe por sua causa, Maria Clara.". Nenhuma animação nova.
+- **Alternativas:** "Feito para a família da Maria Clara."; "Para a Maria Clara e a nossa família."
+- **Motivo:** pedido do Pedro, com o texto escolhido entre três opções. É uma exceção deliberada à regra de não mexer no visual aprovado. Quando o nome está trocado, a fonte do papelzinho diminui um pouco para "Maria Clara" caber em telas de 320 px.
+- **Quem decidiu:** Pedro.

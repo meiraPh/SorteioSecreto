@@ -63,6 +63,28 @@ gh variable set DEPLOY_ATIVO --body true
 3. Toque em **Enviar no WhatsApp** para mandar o link do grupo.
 4. Acompanhe pelo painel quem já escolheu o nome.
 
+## O organizador perdeu o link do painel
+
+O link do painel não pode ser recuperado: o banco guarda só o hash do token. Antes de gerar outro, tente:
+
+1. **O aparelho em que o painel foi aberto.** A página inicial mostra "Painel de <título>" em "Sorteios que você organiza neste aparelho".
+2. **A conversa com você mesmo no WhatsApp**, se usou o botão "Mandar para mim" do painel.
+
+Se nada disso der, gere um link novo no **SQL Editor do projeto de produção**. O link antigo para de funcionar e o sorteio não muda. Troque `COLE_O_CODIGO_AQUI` pelo código do grupo (os 10 caracteres depois de `#/e/` no link que a família recebeu):
+
+```sql
+with novo as (select encode(extensions.gen_random_bytes(18), 'hex') as token)
+update amigo_oculto.eventos e
+   set admin_hash = encode(extensions.digest(novo.token, 'sha256'), 'hex')
+  from novo
+ where e.codigo = 'COLE_O_CODIGO_AQUI'
+returning 'https://amigo-oculto.pedrohmeirasilva.workers.dev/#/admin/' || e.codigo || '/' || novo.token as link_do_painel;
+```
+
+O resultado é o link novo do painel. Mande só para quem organiza. Se o resultado vier vazio, o código está errado.
+
+Não existe recuperação pelo próprio site, de propósito: quem entra no painel pode redefinir o PIN de alguém e ver o resultado daquela pessoa (decisão D-22).
+
 ## Redefinir o PIN de alguém
 
 No painel do organizador, na linha da pessoa, toque em **Redefinir PIN** e confirme. O nome volta a ficar livre, a pessoa toca nele de novo e cria outro PIN. O sorteio não muda.

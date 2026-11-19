@@ -42,6 +42,7 @@
         p_titulo: e.titulo, p_participantes: e.participantes, p_exclusoes: e.exclusoes,
         p_organizador: e.organizador || null, p_data: e.data || null, p_valor: e.valor || null,
         p_mensagem: e.mensagem || null, p_corrente: !!e.corrente,
+        p_hora: e.hora || null, p_local: e.local || null,
       }),
       eventoPublico: (codigo) => rpc('evento_publico', { p_codigo: codigo }),
       resgatar: (pid, pin) => rpc('resgatar', { p_participante: pid, p_pin: pin }),
@@ -100,7 +101,7 @@
     function lista(p) { return copia(p.desejos); }
     function infoEvento(e) {
       return { codigo: e.codigo, titulo: e.titulo, organizador: e.organizador,
-        data: e.data, valor: e.valor, mensagem: e.mensagem, corrente: e.corrente };
+        data: e.data, hora: e.hora, local: e.local, valor: e.valor, mensagem: e.mensagem, corrente: e.corrente };
     }
     function dados(p) {
       const e = [...eventos.values()].find((x) => x.id === p.evento_id);
@@ -148,6 +149,8 @@
       async criarEvento(e) {
         await espera();
         if (!String(e.titulo || '').trim()) return falha('titulo_vazio');
+        const hora = String(e.hora || '').trim() || null;
+        if (hora && !/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(hora)) return falha('dados_invalidos');
         const nomes = (e.participantes || []).map((x) => String(x).trim());
         const n = nomes.length;
         if (n < 3) return falha('minimo_3');
@@ -169,7 +172,7 @@
         const token = hex(18);
         const ev = {
           id: uid(), codigo, token, titulo: limpa(e.titulo, 80), organizador: limpa(e.organizador, 60),
-          data: e.data || null, valor: limpa(e.valor, 40), mensagem: limpa(e.mensagem, 1000), corrente,
+          data: e.data || null, hora, local: limpa(e.local, 120), valor: limpa(e.valor, 40), mensagem: limpa(e.mensagem, 1000), corrente,
         };
         eventos.set(codigo, ev);
         const ids = nomes.map((nome, i) => {

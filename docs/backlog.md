@@ -34,6 +34,26 @@ Cada tarefa tem critério de aceite e responsável. Estados: `a fazer`, `fazendo
 | B-04 | Atualizar comentários que ainda citam `schema.sql` | O cabeçalho da migração e os comentários de `src/api.js`, `tests/server.js` e `tests/sql-test.js` citam `supabase/migrations/` | Claude | a fazer |
 | B-05 | Limpar sorteios de teste do staging automaticamente | O E2E do deploy apaga o próprio sorteio, ou um job apaga os de mais de 1 dia; nunca roda em produção | Claude | a fazer |
 
+## Feedback da rodada 1 (staging, 19/11/2026)
+
+Prioridade definida pelo Pedro: 4, 5, 2, 1, 3.
+
+| # | Item | Critério de aceite | Responsável | Estado |
+|---|---|---|---|---|
+| R1-4 | Tamanhos em campos rotulados | Camisa PP a XG, calça e calçado só com números, outras preferências; quem tirou vê "Camisa M · Calça 40 · Calçado 37"; listas antigas continuam aparecendo (D-21) | Claude | feito no PR da rodada 1; falta o teste do Pedro no preview |
+| R1-5 | Recuperar o painel do organizador | Aparelho lembra do painel; botão "Mandar para mim"; SQL de link novo no runbook, testado; nenhuma função pública nova (D-22) | Claude | feito no PR da rodada 1; falta o teste do Pedro no preview |
+| R1-2 | Dedicatória e easter eggs | Título "Com carinho, para a Maria Clara."; papelzinho e selo com os recados (D-24) | Claude | feito no PR da rodada 1; falta o teste do Pedro no preview |
+| R1-1 | Adicionar à agenda | Horário e local opcionais na criação; Google Agenda e `.ics` com os dados certos e sem o resultado; conferido no celular aberto pelo WhatsApp (iOS e Android) (D-23) | Claude; teste no celular: Pedro | feito no PR da rodada 1; falta o teste em iOS e Android |
+| R1-3 | Foto de perfil | Ver proposta abaixo; Pedro decide antes de começar | Pedro decide | aguardando |
+
+### Proposta para R1-3 (foto de perfil), ainda não aprovada
+
+- **Como guardar:** sem Supabase Storage. A foto é reduzida e comprimida no próprio celular (96×96, JPEG, cerca de 6 KB) e gravada no banco por uma função nova que confere o PIN, como a lista de desejos, com limite de tamanho no servidor. A imagem volta como `data:`, que a CSP já permite (`img-src 'self' data:`). Nenhum serviço novo e nenhuma tabela exposta.
+- **Onde aparece:** no lugar das iniciais, na lista do grupo, no papelzinho e no painel. Quem não tiver foto continua com as iniciais.
+- **Privacidade:** a lista do grupo é aberta para quem tem o link, então as fotos também ficam. Pode haver criança na família. A foto é sempre opcional, e a pessoa pode tirar quando quiser.
+- **Custo:** função nova no SQL e no modo demonstração, migração, testes e tela de upload. É a maior das cinco.
+- **Quando:** depois do go-live. Ao contrário do horário e local, dá para acrescentar com o sorteio já criado, porque cada pessoa põe a própria foto.
+
 ## Design (da auditoria em [design.md](design.md))
 
 Nenhum destes foi feito: o visual aprovado não muda sem o aval do Pedro.

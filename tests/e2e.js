@@ -39,12 +39,23 @@ const CASAIS = [['Vó Lúcia', 'Vô Antônio'], ['Tia Rose', 'Tio Marcos']];
   assert.ok(!(await page.textContent('#app')).includes('null'), 'sem texto null');
   assert.ok(!/recado/i.test(await page.textContent('#app')), 'sem menção a recados');
   await shot('01-inicio');
+  assert.ok((await page.textContent('.hero-h')).includes('Com carinho, para a Maria Clara.'), 'dedicatória');
+  await page.click('.cena-papel');
+  assert.equal((await page.textContent('.cena-papel .papel-nome')).trim(), 'Maria Clara', 'easter egg do papelzinho');
+  assert.equal((await page.textContent('.cena-papel .papel-rodape')).trim(), 'Eu tiraria você todo ano.');
+  await page.click('.cena-papel');
+  assert.equal((await page.textContent('.cena-papel .papel-nome')).trim(), 'Júlia', 'tocar de novo desfaz');
+  for (let k = 0; k < 3; k++) await page.click('.marca-selo');
+  await page.waitForSelector('.toast.visivel:has-text("Este site existe por sua causa, Maria Clara.")');
+  console.log('✓ dedicatória e os dois easter eggs');
 
   // ---------- criar ----------
   await page.click('text=Criar sorteio');
   await page.waitForSelector('#f-nome');
   await page.fill('#f-org', 'Pedro');
   await page.fill('#f-valor', 'R$ 100');
+  await page.fill('#f-hora', '19:30');
+  await page.fill('#f-local', 'Casa da vó');
   await page.fill('#f-msg', 'Troca na ceia do dia 24, na casa da vó.\nPresente com nota para trocar.');
   await page.fill('#f-nome', NOMES.slice(0, 4).join(', '));
   await page.press('#f-nome', 'Enter');
@@ -67,6 +78,7 @@ const CASAIS = [['Vó Lúcia', 'Vô Antônio'], ['Tia Rose', 'Tio Marcos']];
   assert.match(hashAdmin, /^#\/admin\/[0-9a-f]{10}\/[0-9a-f]{36}$/);
   assert.ok((await page.getAttribute('#btn-whats', 'href')).startsWith('https://wa.me/?text='));
   await shot('03-painel-novo');
+  assert.equal(await page.locator('#btn-painel-mim').count(), 1, 'botão de mandar o painel para si');
   console.log('✓ criou o sorteio e abriu o painel');
 
   // ---------- copiar sem a API de área de transferência (plano B com textarea) ----------
@@ -83,7 +95,11 @@ const CASAIS = [['Vó Lúcia', 'Vô Antônio'], ['Tia Rose', 'Tio Marcos']];
   for (const [i, n] of NOMES.entries()) {
     await irPara(hashGrupo);
     await page.waitForSelector('text=Quem é você?');
-    if (i === 0) await shot('04-grupo');
+    if (i === 0) {
+      await shot('04-grupo');
+      const convite = await page.textContent('.convite');
+      assert.ok(convite.includes('às 19h30') && convite.includes('Casa da vó'), 'convite com horário e local');
+    }
     await page.click(nome(n));
     await page.waitForSelector('#pin1');
     const pin = String(1000 + i * 111).slice(0, 4);
@@ -108,6 +124,25 @@ const CASAIS = [['Vó Lúcia', 'Vô Antônio'], ['Tia Rose', 'Tio Marcos']];
     await page.click('#abrir-papel');
     await page.waitForSelector('.papelzinho.aberto .papel-nome');
     resultado[n] = { tirou: (await page.textContent('.papel-nome')).trim(), pin };
+    if (i === 0) {
+      const g = new URL(await page.getAttribute('#btn-google-agenda', 'href'));
+      assert.equal(g.hostname, 'calendar.google.com');
+      assert.match(g.searchParams.get('dates'), /^\d{8}T193000\/\d{8}T223000$/, 'google: 19h30 às 22h30');
+      assert.equal(g.searchParams.get('location'), 'Casa da vó');
+      assert.equal(g.searchParams.get('ctz'), 'America/Sao_Paulo');
+      const ics = decodeURIComponent((await page.getAttribute('#btn-ics', 'href')).split(',').slice(1).join(','));
+      assert.match(ics, /DTSTART:\d{8}T223000Z/, 'ics em UTC (19h30 de Brasília)');
+      assert.ok(ics.includes('LOCATION:Casa da vó') && ics.includes('BEGIN:VEVENT'));
+      // O nome de quem a pessoa tirou só pode aparecer tantas vezes quanto já aparece nos dados
+      // públicos do evento (ex.: tirou "Pedro", que também é quem organiza).
+      const vezes = (texto, s) => texto.split(s).length - 1;
+      const tirou = resultado[n].tirou;
+      const publico = ['Pedro', 'R$ 100', 'Casa da vó', 'Troca na ceia do dia 24, na casa da vó.\nPresente com nota para trocar.', await page.textContent('.pessoa-cab .sobre')].join('\n');
+      for (const [onde, texto] of [['google', [...g.searchParams.values()].join('\n')], ['ics', ics.replace(/\r\n /g, '').replace(/\\n/g, '\n').replace(/\\([,;\\])/g, '$1')]]) {
+        assert.ok(vezes(texto, tirou) <= vezes(publico, tirou), `agenda (${onde}) não leva quem a pessoa tirou (${tirou})`);
+      }
+      console.log('✓ adicionar à agenda: Google e .ics com horário e local, sem o resultado');
+    }
     if (i === 0) {
       await shot('07-revelado');
       await page.click('#btn-esconder');
@@ -139,7 +174,10 @@ const CASAIS = [['Vó Lúcia', 'Vô Antônio'], ['Tia Rose', 'Tio Marcos']];
   await page.waitForSelector('#abrir-papel');
   assert.equal(await page.locator('.aba').count(), 2, 'só duas abas');
   await page.click('#aba-lista');
-  await page.fill('#tamanhos', 'Camisa M, calçado 37');
+  await page.selectOption('#t-camisa', 'M');
+  await page.fill('#t-calcado', '37');
+  await page.fill('#t-calca', '4O');   // letra O no lugar de zero: precisa ser recusado
+  await page.fill('#t-outras', 'Não gosto de perfume doce');
   await page.fill('#d-0', 'Livro Torto Arado');
   await page.fill('#l-0', 'www.amazon.com.br/dp/8582101977');
   await page.fill('#o-0', 'Capa dura');
@@ -152,7 +190,14 @@ const CASAIS = [['Vó Lúcia', 'Vô Antônio'], ['Tia Rose', 'Tio Marcos']];
   assert.ok((await textoErro()).includes('não parece válido'), 'bloqueia link perigoso');
   await page.click('button[aria-label="Remover presente 3"]');
   await page.click('#btn-salvar');
+  assert.ok((await textoErro()).includes('Na calça, coloque só o número'), 'calça só com número');
+  await page.fill('#t-calca', '40');
+  await page.click('#btn-salvar');
   await page.waitForSelector('.toast.visivel:has-text("Lista salva")');
+  // depois de salvar, os campos voltam preenchidos com o que foi gravado
+  assert.equal(await page.inputValue('#t-camisa'), 'M');
+  assert.equal(await page.inputValue('#t-calca'), '40');
+  assert.equal(await page.inputValue('#t-outras'), 'Não gosto de perfume doce');
   await page.evaluate(() => window.scrollTo(0, 0));
   await shot('09-minha-lista');
   await page.click('#btn-sair');
@@ -167,7 +212,9 @@ const CASAIS = [['Vó Lúcia', 'Vô Antônio'], ['Tia Rose', 'Tio Marcos']];
   await page.waitForSelector('.desejos');
   assert.equal(await page.getAttribute('.desejo a', 'href'), 'https://www.amazon.com.br/dp/8582101977', 'link normalizado com https');
   assert.equal(await page.getAttribute('.desejo a', 'rel'), 'noopener noreferrer nofollow');
-  assert.ok((await page.textContent('.tamanhos')).includes('calçado 37'));
+  const tamanhosAmigo = await page.textContent('.tamanhos');
+  assert.ok(tamanhosAmigo.includes('Camisa M · Calça 40 · Calçado 37'), 'tamanhos: ' + tamanhosAmigo);
+  assert.ok(tamanhosAmigo.includes('Não gosto de perfume doce'));
   await shot('10-lista-do-amigo');
   await page.click('#btn-sair');
   console.log(`✓ ${quemTirouAna} viu a lista da Júlia com o link da loja`);
@@ -216,6 +263,12 @@ const CASAIS = [['Vó Lúcia', 'Vô Antônio'], ['Tia Rose', 'Tio Marcos']];
   await page.waitForSelector('.hero');
   await page.waitForTimeout(200);
   await shot('13-inicio-desktop', false);
+  if (await page.evaluate(() => window.Api.modo) !== 'demo') {
+    const painel = page.locator('.meus-paineis a');
+    assert.equal(await painel.count(), 1, 'home lembra do painel deste aparelho');
+    assert.match(await painel.getAttribute('href'), /^#\/admin\/[0-9a-f]{10}\/[0-9a-f]{36}$/);
+    console.log('✓ a página inicial lembra do painel criado neste aparelho');
+  }
   await irPara(hashGrupo);
   await page.waitForSelector('text=Quem é você?');
   await shot('14-grupo-desktop', false);

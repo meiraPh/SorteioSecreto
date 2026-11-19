@@ -37,10 +37,22 @@ jobs:
       SUPABASE_PUBLISHABLE_KEY: ${{ vars.STAGING_SUPABASE_PUBLISHABLE_KEY }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+      # O preview usa o banco de staging, que só recebe migração depois do merge.
+      # PR com migração nova: o preview sobe, mas o E2E nele não faz sentido.
+      - name: O PR traz migração nova?
+        id: migracao
+        run: |
+          novas=$(git diff --name-only --diff-filter=A "origin/${{ github.base_ref }}...HEAD" -- supabase/migrations | tr '\n' ' ')
+          echo "novas=$novas" >> "$GITHUB_OUTPUT"
+          if [ -n "$novas" ]; then
+            echo "Este PR traz migração ($novas). O banco de staging só a recebe depois do merge; teste o fluxo completo no staging, antes de aprovar produção." >> "$GITHUB_STEP_SUMMARY"
+          fi
       - run: npm ci
       - run: npm run build
       - name: Publica a versão com alias pr-${{ github.event.number }}
@@ -58,7 +70,9 @@ jobs:
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Preview deste PR: $url" >> "$GITHUB_STEP_SUMMARY"
       - run: npx playwright install --with-deps chromium
+        if: steps.migracao.outputs.novas == ''
       - name: E2E no preview
+        if: steps.migracao.outputs.novas == ''
         run: node tests/e2e.js "${{ steps.preview.outputs.url }}" preview
       - name: Guarda as capturas
         if: always()
